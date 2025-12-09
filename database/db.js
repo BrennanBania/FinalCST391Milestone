@@ -5,13 +5,8 @@ const { Pool } = pg;
 // Ensure DATABASE_URL is available
 const connectionString = process.env.DATABASE_URL;
 
-console.log('Database connection attempt');
-console.log('DATABASE_URL exists:', !!connectionString);
-console.log('DATABASE_URL value:', connectionString);
-
 if (!connectionString) {
   console.error('DATABASE_URL environment variable is not set!');
-  console.error('Available env vars with DATA:', Object.keys(process.env).filter(k => k.includes('DATA')));
   throw new Error('DATABASE_URL is required');
 }
 

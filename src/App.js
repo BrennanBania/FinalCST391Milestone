@@ -76,6 +76,14 @@ function App() {
   const handleViewAlbum = (album) => {
     setSelectedAlbum(album);
     setCurrentView('album-detail');
+    
+    // Track recently viewed albums
+    if (isLoggedIn && album.album_id) {
+      const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+      const filtered = viewed.filter(id => id !== album.album_id);
+      const updated = [album.album_id, ...filtered].slice(0, 10);
+      localStorage.setItem('recentlyViewed', JSON.stringify(updated));
+    }
   };
 
   const renderPage = () => {
@@ -86,6 +94,8 @@ function App() {
             topAlbums={appState.topAlbums}
             onViewAlbum={handleViewAlbum}
             isLoggedIn={isLoggedIn}
+            username={username}
+            albums={appState.albums}
           />
         );
       case 'albums':

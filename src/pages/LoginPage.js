@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { fetchAPI } from '../utils/api';
+import React, { useState, useEffect } from 'react';
+import { fetchAPI, API_BASE_URL } from '../utils/api';
 
 function LoginPage({ onLogin }) {
   const [isLogin, setIsLogin] = useState(true);
@@ -8,6 +8,23 @@ function LoginPage({ onLogin }) {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [githubLoading, setGithubLoading] = useState(false);
+
+  // Handle OAuth callback
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const username = params.get('username');
+    const role = params.get('role');
+
+    if (token && username) {
+      // Clear URL parameters
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      // Login with the token
+      onLogin(token, { username, role });
+    }
+  }, [onLogin]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,6 +52,13 @@ function LoginPage({ onLogin }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGitHubLogin = () => {
+    setGithubLoading(true);
+    setError('');
+    // Redirect to GitHub OAuth endpoint
+    window.location.href = `${API_BASE_URL}/api/auth/github`;
   };
 
   return (
@@ -81,6 +105,22 @@ function LoginPage({ onLogin }) {
             {loading ? 'Loading...' : (isLogin ? 'Login' : 'Register')}
           </button>
         </form>
+
+        {isLogin && (
+          <>
+            <div className="divider">
+              <span>OR</span>
+            </div>
+            <button 
+              type="button" 
+              onClick={handleGitHubLogin} 
+              disabled={githubLoading}
+              className="github-button"
+            >
+              {githubLoading ? 'Redirecting...' : '🔓 Login with GitHub'}
+            </button>
+          </>
+        )}
 
         <p className="toggle-auth">
           {isLogin ? "Don't have an account? " : 'Already have an account? '}

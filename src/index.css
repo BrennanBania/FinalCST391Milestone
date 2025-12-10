@@ -314,6 +314,52 @@ body {
   color: #666;
 }
 
+.divider {
+  display: flex;
+  align-items: center;
+  text-align: center;
+  margin: 1.5rem 0;
+  color: #666;
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  border-bottom: 1px solid #ddd;
+}
+
+.divider span {
+  padding: 0 1rem;
+  font-size: 0.9rem;
+}
+
+.github-button {
+  background: #24292e;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 4px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.3s;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.github-button:hover:not(:disabled) {
+  background: #1a1e22;
+}
+
+.github-button:disabled {
+  background: #6c757d;
+  cursor: not-allowed;
+}
+
 .welcome-container {
   padding: 3rem 2rem;
   max-width: 1400px;

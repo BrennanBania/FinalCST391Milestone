@@ -1,5 +1,14 @@
-import db from '../../../../database/db';
-import { verifyToken } from '../../../../lib/auth';
+import db from '../../../database/db';
+import jwt from 'jsonwebtoken';
+
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
+
+function verifyToken(req) {
+  const authHeader = req.headers.authorization;
+  const token = authHeader && authHeader.split(' ')[1];
+  if (!token) throw new Error('Access token required');
+  return jwt.verify(token, JWT_SECRET);
+}
 
 export default async function handler(req, res) {
   try {

@@ -20,7 +20,8 @@ export default function AlbumDetail({ isLoggedIn, isAdmin, username, appState })
       setLoading(true);
       const response = await fetchAPI(`/api/albums/${id}`);
       if (response.ok) {
-        setAlbum(response.data);
+        // The API returns { album: {...}, tracks: [...], ... }
+        setAlbum(response.data.album || response.data);
       } else {
         console.error('Error fetching album:', response.error);
       }

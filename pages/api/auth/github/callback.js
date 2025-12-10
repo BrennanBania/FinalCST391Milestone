@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import db from '../../../../database/db.js';
+import db from '../../../../database/db';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-in-production';
 const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;

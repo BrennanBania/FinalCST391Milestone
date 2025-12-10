@@ -3,14 +3,14 @@ import AlbumCard from '../components/AlbumCard';
 import ReviewCard from '../components/ReviewCard';
 import { fetchAPI } from '../utils/api';
 
-function HomePage({ topAlbums, onViewAlbum, isLoggedIn, username, albums }) {
+function HomePage({ topAlbums, onViewAlbum, isLoggedIn, username, albums = [] }) {
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [recommended, setRecommended] = useState([]);
   const [recentReviews, setRecentReviews] = useState([]);
 
   useEffect(() => {
     // Load recently viewed from localStorage
-    if (isLoggedIn) {
+    if (isLoggedIn && albums && albums.length > 0) {
       const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
       const viewedAlbums = viewed
         .map(id => albums.find(a => a.album_id === id))
@@ -23,7 +23,7 @@ function HomePage({ topAlbums, onViewAlbum, isLoggedIn, username, albums }) {
     fetchRecentReviews();
 
     // Get recommended albums (albums not in user's recently viewed)
-    if (albums.length > 0) {
+    if (albums && albums.length > 0) {
       const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
       const notViewed = albums.filter(a => !viewed.includes(a.album_id));
       const shuffled = notViewed.sort(() => 0.5 - Math.random());

@@ -3,10 +3,13 @@ import { fetchAPI } from '../utils/api';
 
 function AdminDashboard({ albumRequests, appState, onNavigate }) {
   const [requests, setRequests] = useState([]);
-  const [view, setView] = useState('overview'); // 'overview', 'requests', 'reviews', 'albums', 'tracks'
+  const [view, setView] = useState('overview'); // 'overview', 'requests', 'reviews', 'albums', 'tracks', 'users'
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
+  const [users, setUsers] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [userReviews, setUserReviews] = useState([]);
   const [editingRequest, setEditingRequest] = useState(null);
   const [editingAlbum, setEditingAlbum] = useState(null);
   const [selectedAlbumForTracks, setSelectedAlbumForTracks] = useState(null);
@@ -40,11 +43,64 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
   useEffect(() => {
     appState.fetchAlbumRequests();
     appState.fetchAllReviews();
-  }, []);
+    if (view === 'users') {
+      fetchUsers();
+    }
+  }, [view]);
 
   useEffect(() => {
     setRequests(albumRequests || []);
   }, [albumRequests]);
+
+  const fetchUsers = async () => {
+    try {
+      const response = await fetchAPI('/api/users');
+      if (response.ok && response.data) {
+        setUsers(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  const fetchUserReviews = async (userId) => {
+    try {
+      const response = await fetchAPI(`/api/reviews/user/${userId}`);
+      if (response.ok && response.data) {
+        setUserReviews(response.data);
+      }
+    } catch (error) {
+      console.error('Error fetching user reviews:', error);
+    }
+  };
+
+  const handleUpdateUserRole = async (userId, newRole) => {
+    if (!confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
+      return;
+    }
+
+    try {
+      const response = await fetchAPI(`/api/users/${userId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ role: newRole })
+      });
+
+      if (response.ok) {
+        alert('User role updated successfully!');
+        fetchUsers();
+      } else {
+        alert(response.error || 'Error updating user role');
+      }
+    } catch (error) {
+      console.error('Error updating user role:', error);
+      alert('Error updating user role');
+    }
+  };
+
+  const handleViewUserReviews = (user) => {
+    setSelectedUser(user);
+    fetchUserReviews(user.user_id);
+  };
 
   const handleApprove = async (requestId) => {
     if (!confirm('Are you sure you want to approve this album request?')) {
@@ -370,6 +426,10 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
           <div className="dashboard-card" onClick={() => setView('tracks')}>
             <h3>Manage Tracks</h3>
             <p><span className="dashboard-number">♫</span> Edit album tracks</p>
+          </div>
+          <div className="dashboard-card" onClick={() => setView('users')}>
+            <h3>Manage Users</h3>
+            <p><span className="dashboard-number">{users.length || 0}</span> registered user{(users.length || 0) !== 1 ? 's' : ''}</p>
           </div>
           <div className="dashboard-card" onClick={() => onNavigate('edit-album')}>
             <h3>Add Album</h3>
@@ -940,6 +1000,79 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
                 )}
               </div>
             </>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'users') {
+    return (
+      <div className="page-container admin-dashboard">
+        <div className="admin-section">
+          <button onClick={() => setView('overview')} className="back-btn">← Back to Dashboard</button>
+          <h2>Manage Users</h2>
+
+          {selectedUser ? (
+            <div>
+              <button onClick={() => setSelectedUser(null)} className="back-btn">← Back to Users</button>
+              <h3>Reviews by {selectedUser.username}</h3>
+              {userReviews.length > 0 ? (
+                <div className="reviews-list">
+                  {userReviews.map(review => (
+                    <div key={review.review_id} className="admin-review-card">
+                      <h4>{review.album_title} by {review.artist_name}</h4>
+                      <div className="review-rating">
+                        {[1, 2, 3, 4, 5].map(star => (
+                          <span key={star} className={`star ${star <= review.rating ? 'filled' : ''}`}>★</span>
+                        ))}
+                      </div>
+                      <p>{review.review_text}</p>
+                      <p className="review-date">{new Date(review.created_at).toLocaleDateString()}</p>
+                      {review.is_flagged && <span className="flagged-badge">Flagged</span>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>No reviews by this user.</p>
+              )}
+            </div>
+          ) : (
+            <div className="album-list-admin">
+              {users.map(user => (
+                <div key={user.user_id} className="admin-album-item">
+                  <div className="admin-album-info">
+                    <h3>{user.username}</h3>
+                    <p>Email: {user.email}</p>
+                    <p>Role: <strong>{user.role}</strong></p>
+                    <p>Joined: {new Date(user.created_at).toLocaleDateString()}</p>
+                  </div>
+                  <div className="admin-album-actions">
+                    <button 
+                      onClick={() => handleViewUserReviews(user)} 
+                      className="view-btn"
+                    >
+                      View Reviews
+                    </button>
+                    {user.role === 'customer' ? (
+                      <button 
+                        onClick={() => handleUpdateUserRole(user.user_id, 'admin')} 
+                        className="approve-btn"
+                      >
+                        Make Admin
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => handleUpdateUserRole(user.user_id, 'customer')} 
+                        className="deny-btn"
+                      >
+                        Remove Admin
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       </div>

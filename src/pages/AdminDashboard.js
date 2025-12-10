@@ -1007,6 +1007,23 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
   }
 
   if (view === 'users') {
+    // Filter and sort users
+    const filteredUsers = users
+      .filter(user => 
+        user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .sort((a, b) => {
+        if (sortBy === 'newest') {
+          return new Date(b.created_at) - new Date(a.created_at);
+        } else if (sortBy === 'oldest') {
+          return new Date(a.created_at) - new Date(b.created_at);
+        } else if (sortBy === 'username') {
+          return a.username.localeCompare(b.username);
+        }
+        return 0;
+      });
+
     return (
       <div className="page-container admin-dashboard">
         <div className="admin-section">
@@ -1038,8 +1055,35 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
               )}
             </div>
           ) : (
-            <div className="album-list-admin">
-              {users.map(user => (
+            <>
+              <div className="reviews-controls">
+                <div className="search-bar">
+                  <input
+                    type="text"
+                    placeholder="Search by username or email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="search-input"
+                  />
+                </div>
+                <div className="filter-controls">
+                  <div className="filter-group">
+                    <label>Sort by:</label>
+                    <select value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+                      <option value="newest">Newest First</option>
+                      <option value="oldest">Oldest First</option>
+                      <option value="username">Username (A-Z)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div className="reviews-stats">
+                <p>Showing {filteredUsers.length} of {users.length} users</p>
+              </div>
+
+              <div className="album-list-admin">
+                {filteredUsers.map(user => (
                 <div key={user.user_id} className="admin-album-item">
                   <div className="admin-album-info">
                     <h3>{user.username}</h3>
@@ -1072,7 +1116,8 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
                   </div>
                 </div>
               ))}
-            </div>
+              </div>
+            </>
           )}
         </div>
       </div>

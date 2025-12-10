@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ReviewCard from '../components/ReviewCard';
 import { fetchAPI } from '../utils/api';
 
-function AlbumDetailPage({ album, isLoggedIn, username, appState, onBack }) {
+function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, onBack }) {
   const [reviews, setReviews] = useState([]);
   const [myReview, setMyReview] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -164,6 +164,23 @@ function AlbumDetailPage({ album, isLoggedIn, username, appState, onBack }) {
           )}
         </div>
       </div>
+
+      {tracks && tracks.length > 0 && (
+        <div className="tracks-section">
+          <h2>Track List</h2>
+          <ol className="track-list">
+            {tracks.map(track => (
+              <li key={track.track_id} className="track-item">
+                <span className="track-number">{track.track_number}.</span>
+                <span className="track-title">{track.title}</span>
+                {track.duration && (
+                  <span className="track-duration">{track.duration}</span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       {isLoggedIn && (
         <div className="review-form-section">

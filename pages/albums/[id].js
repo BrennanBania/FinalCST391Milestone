@@ -6,7 +6,7 @@ import { fetchAPI } from '../../src/utils/api';
 export default function AlbumDetail({ isLoggedIn, isAdmin, username, appState }) {
   const router = useRouter();
   const { id } = router.query;
-  const [album, setAlbum] = useState(null);
+  const [albumData, setAlbumData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -20,8 +20,8 @@ export default function AlbumDetail({ isLoggedIn, isAdmin, username, appState })
       setLoading(true);
       const response = await fetchAPI(`/api/albums/${id}`);
       if (response.ok) {
-        // The API returns { album: {...}, tracks: [...], ... }
-        setAlbum(response.data.album || response.data);
+        // The API returns { album: {...}, tracks: [...], averageRating, reviewCount }
+        setAlbumData(response.data);
       } else {
         console.error('Error fetching album:', response.error);
       }
@@ -32,13 +32,14 @@ export default function AlbumDetail({ isLoggedIn, isAdmin, username, appState })
     }
   };
 
-  if (loading || !album) {
+  if (loading || !albumData) {
     return <div style={{ padding: '20px', textAlign: 'center' }}>Loading...</div>;
   }
 
   return (
     <AlbumDetailPage
-      album={album}
+      album={albumData.album}
+      tracks={albumData.tracks || []}
       isLoggedIn={isLoggedIn}
       isAdmin={isAdmin}
       username={username}

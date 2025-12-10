@@ -1,6 +1,6 @@
 import React from 'react';
 
-function ReviewCard({
+const ReviewCard = React.memo(({
   review,
   isEditing = false,
   editingData = {},
@@ -13,7 +13,7 @@ function ReviewCard({
   isMyReview = false,
   isFlagged = false,
   canUnflag = false,
-}) {
+}) => {
   if (isEditing) {
     return (
       <div className="review-card-large edit-mode">
@@ -110,6 +110,8 @@ function ReviewCard({
       </div>
     </div>
   );
-}
+});
+
+ReviewCard.displayName = 'ReviewCard';
 
 export default ReviewCard;

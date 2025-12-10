@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReviewCard from '../components/ReviewCard';
 
 function AllReviewsPage({ reviews, isAdmin, username, appState }) {
@@ -6,9 +6,13 @@ function AllReviewsPage({ reviews, isAdmin, username, appState }) {
   const [filterFlagged, setFilterFlagged] = useState('all'); // 'all', 'flagged', 'pending'
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState('recent'); // 'recent', 'rating-high', 'rating-low'
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
-    appState.fetchAllReviews();
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      appState.fetchAllReviews();
+    }
   }, []);
 
   useEffect(() => {

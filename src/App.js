@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Navigation from './components/Navigation';
 import { useAppState } from './utils/useAppState';
-import { decodeToken } from './utils/api';
+import { decodeToken, getToken, setToken, removeToken } from './utils/api';
 import HomePage from './pages/HomePage';
 import AlbumsPage from './pages/AlbumsPage';
 import AlbumDetailPage from './pages/AlbumDetailPage';
@@ -24,7 +24,7 @@ function App() {
 
   // Initialize on mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const storedAdmin = localStorage.getItem('isAdmin') === 'true';
     const storedUsername = localStorage.getItem('username');
     
@@ -38,7 +38,7 @@ function App() {
         }
       } catch (error) {
         console.error('Token decode error:', error);
-        localStorage.removeItem('token');
+        removeToken();
         localStorage.removeItem('isAdmin');
         localStorage.removeItem('username');
       }
@@ -54,7 +54,7 @@ function App() {
   };
 
   const handleLogin = (token, user) => {
-    localStorage.setItem('token', token);
+    setToken(token);
     localStorage.setItem('isAdmin', user.role === 'admin' ? 'true' : 'false');
     localStorage.setItem('username', user.username);
     setIsLoggedIn(true);
@@ -64,7 +64,7 @@ function App() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    removeToken();
     localStorage.removeItem('isAdmin');
     localStorage.removeItem('username');
     setIsLoggedIn(false);

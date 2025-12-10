@@ -996,7 +996,11 @@ body {
   border-radius: 8px;
 }
 
-.tracks-section {
+/* Tracks Layout */
+.tracks-layout {
+  display: grid;
+  grid-template-columns: 400px 1fr;
+  gap: 2rem;
   background: white;
   border-radius: 12px;
   padding: 2.5rem;
@@ -1004,11 +1008,105 @@ body {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 
-.tracks-section h2 {
+@media (max-width: 1024px) {
+  .tracks-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tracks-list-section h2 {
   margin: 0 0 1.5rem 0;
   color: #1a1a1a;
   font-size: 1.8rem;
   font-weight: 600;
+}
+
+.track-details-section {
+  border-left: 2px solid #e0e0e0;
+  padding-left: 2rem;
+  animation: slideIn 0.3s ease-out;
+}
+
+@media (max-width: 1024px) {
+  .track-details-section {
+    border-left: none;
+    border-top: 2px solid #e0e0e0;
+    padding-left: 0;
+    padding-top: 2rem;
+    margin-top: 2rem;
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.track-details-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.track-details-header h3 {
+  margin: 0;
+  color: #1a1a1a;
+  font-size: 1.5rem;
+}
+
+.duration-badge {
+  background: #007bff;
+  color: white;
+  padding: 0.4rem 0.8rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-family: 'Courier New', monospace;
+}
+
+.track-video {
+  margin-bottom: 2rem;
+}
+
+.track-video h4,
+.track-lyrics h4 {
+  margin: 0 0 1rem 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+.track-lyrics {
+  margin-top: 2rem;
+}
+
+.lyrics-text {
+  background: #f8f9fa;
+  padding: 1.5rem;
+  border-radius: 8px;
+  border-left: 4px solid #007bff;
+  white-space: pre-wrap;
+  font-family: 'Georgia', serif;
+  line-height: 1.8;
+  color: #333;
+  font-size: 1rem;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.no-content {
+  color: #999;
+  font-style: italic;
+  text-align: center;
+  padding: 3rem;
 }
 
 .track-list {
@@ -1041,6 +1139,22 @@ body {
 .track-item.clickable:hover {
   background: #e8f4f8;
   transform: translateX(4px);
+}
+
+.track-item.active {
+  background: #007bff;
+  color: white;
+  border-radius: 8px;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
+  margin-left: -0.5rem;
+  margin-right: -0.5rem;
+}
+
+.track-item.active .track-number,
+.track-item.active .track-title,
+.track-item.active .track-duration {
+  color: white;
 }
 
 .track-item:last-child {

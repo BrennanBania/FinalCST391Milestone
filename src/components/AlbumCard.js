@@ -1,12 +1,13 @@
 import React from 'react';
 
-function AlbumCard({ album, onView, showViewButton = true }) {
+const AlbumCard = React.memo(({ album, onView, showViewButton = true }) => {
   return (
     <div className="album-card">
       <img
         src={album.image_url}
         alt={album.title}
         onError={(e) => (e.target.style.display = 'none')}
+        loading="lazy"
       />
       <h3>{album.title}</h3>
       <p>{album.artist_name}</p>
@@ -23,6 +24,8 @@ function AlbumCard({ album, onView, showViewButton = true }) {
       )}
     </div>
   );
-}
+});
+
+AlbumCard.displayName = 'AlbumCard';
 
 export default AlbumCard;

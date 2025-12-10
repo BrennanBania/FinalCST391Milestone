@@ -16,28 +16,20 @@ function Navigation({
     <nav className="navbar">
       <div className="nav-brand">🎵 Music Collection</div>
       <div className="nav-links">
-        <Link href="/" passHref>
-          <button className={`nav-btn${currentPath === '/' ? ' active' : ''}`}>
-            Home
-          </button>
+        <Link href="/" className={`nav-btn${currentPath === '/' ? ' active' : ''}`}>
+          Home
         </Link>
-        <Link href="/albums" passHref>
-          <button className={`nav-btn${currentPath === '/albums' ? ' active' : ''}`}>
-            Albums
-          </button>
+        <Link href="/albums" className={`nav-btn${currentPath === '/albums' ? ' active' : ''}`}>
+          Albums
         </Link>
         {isLoggedIn && (
-          <Link href="/my-reviews" passHref>
-            <button className={`nav-btn${currentPath === '/my-reviews' ? ' active' : ''}`}>
-              My Reviews
-            </button>
+          <Link href="/my-reviews" className={`nav-btn${currentPath === '/my-reviews' ? ' active' : ''}`}>
+            My Reviews
           </Link>
         )}
         {isLoggedIn && isAdmin && (
-          <Link href="/admin" passHref>
-            <button className={`nav-btn${currentPath === '/admin' ? ' active' : ''}`}>
-              Admin
-            </button>
+          <Link href="/admin" className={`nav-btn${currentPath === '/admin' ? ' active' : ''}`}>
+            Admin
           </Link>
         )}
         {isLoggedIn && <span className="username-display">{username}</span>}
@@ -47,10 +39,8 @@ function Navigation({
           </button>
         )}
         {!isLoggedIn && (
-          <Link href="/login" passHref>
-            <button className="logout-btn">
-              Login
-            </button>
+          <Link href="/login" className="logout-btn">
+            Login
           </Link>
         )}
       </div>

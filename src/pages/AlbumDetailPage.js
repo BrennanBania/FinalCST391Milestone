@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ReviewCard from '../components/ReviewCard';
 import { fetchAPI } from '../utils/api';
 
@@ -12,16 +12,12 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
   const [reviewCount, setReviewCount] = useState(0);
   const [reviewsCollapsed, setReviewsCollapsed] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState(null);
-  const [showLyricsModal, setShowLyricsModal] = useState(false);
 
   const handleTrackClick = (track) => {
-    setSelectedTrack(track);
-    setShowLyricsModal(true);
-  };
-
-  const closeLyricsModal = () => {
-    setShowLyricsModal(false);
-    setSelectedTrack(null);
+    console.log('Selected track:', track);
+    console.log('Track video_url:', track.video_url);
+    console.log('Embed URL:', track.video_url ? getYouTubeEmbedUrl(track.video_url) : 'No video_url');
+    setSelectedTrack(track.track_id === selectedTrack?.track_id ? null : track);
   };
 
   const getYouTubeEmbedUrl = (url) => {
@@ -46,13 +42,9 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
     return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
   };
 
-  useEffect(() => {
-    fetchReviews();
-  }, [album.album_id]);
-
-  const fetchReviews = async () => {
+  const fetchReviews = useCallback(async () => {
     try {
-      const response = await fetchAPI(`/api/reviews/albums/${album.album_id}/reviews`);
+      const response = await fetchAPI(`/api/albums/${album.album_id}/reviews`);
       const data = response.ok ? response.data : {};
       
       if (data.reviews && Array.isArray(data.reviews)) {
@@ -72,7 +64,11 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
     } catch (error) {
       console.error('Error fetching reviews:', error);
     }
-  };
+  }, [album.album_id, username]);
+
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const handleSubmitReview = async () => {
     if (!isLoggedIn) {
@@ -194,40 +190,62 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
         </div>
       </div>
 
-      {album.video_url && getYouTubeEmbedUrl(album.video_url) && (
-        <div className="video-section">
-          <h2>Featured Video</h2>
-          <div className="video-container">
-            <iframe
-              src={getYouTubeEmbedUrl(album.video_url)}
-              title="Album Video"
-              frameBorder="0"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              allowFullScreen
-            />
-          </div>
-        </div>
-      )}
-
       {tracks && tracks.length > 0 && (
-        <div className="tracks-section">
-          <h2>Track List</h2>
-          <ol className="track-list">
-            {tracks.map(track => (
-              <li 
-                key={track.track_id} 
-                className="track-item clickable"
-                onClick={() => handleTrackClick(track)}
-                title="Click to view lyrics"
-              >
-                <span className="track-number">{track.track_number}.</span>
-                <span className="track-title">{track.title}</span>
-                {track.duration && (
-                  <span className="track-duration">{track.duration}</span>
-                )}
-              </li>
-            ))}
-          </ol>
+        <div className="tracks-layout">
+          <div className="tracks-list-section">
+            <h2>Track List</h2>
+            <ol className="track-list">
+              {tracks.map(track => (
+                <li 
+                  key={track.track_id} 
+                  className={`track-item clickable ${selectedTrack?.track_id === track.track_id ? 'active' : ''}`}
+                  onClick={() => handleTrackClick(track)}
+                  title="Click to view video and lyrics"
+                >
+                  <span className="track-number">{track.track_number}.</span>
+                  <span className="track-title">{track.title}</span>
+                  {track.duration && (
+                    <span className="track-duration">{track.duration}</span>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {selectedTrack && (
+            <div className="track-details-section">
+              <div className="track-details-header">
+                <h3>{selectedTrack.track_number}. {selectedTrack.title}</h3>
+                {selectedTrack.duration && <span className="duration-badge">{selectedTrack.duration}</span>}
+              </div>
+
+              {selectedTrack.video_url && getYouTubeEmbedUrl(selectedTrack.video_url) && (
+                <div className="track-video">
+                  <h4>Video</h4>
+                  <div className="video-container">
+                    <iframe
+                      src={getYouTubeEmbedUrl(selectedTrack.video_url)}
+                      title={`${selectedTrack.title} Video`}
+                      frameBorder="0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    />
+                  </div>
+                </div>
+              )}
+
+              {selectedTrack.lyrics && (
+                <div className="track-lyrics">
+                  <h4>Lyrics</h4>
+                  <pre className="lyrics-text">{selectedTrack.lyrics}</pre>
+                </div>
+              )}
+
+              {!selectedTrack.video_url && !selectedTrack.lyrics && (
+                <p className="no-content">No video or lyrics available for this track.</p>
+              )}
+            </div>
+          )}
         </div>
       )}
 
@@ -339,25 +357,6 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
           )}
         </div>
       </div>
-
-      {/* Lyrics Modal */}
-      {showLyricsModal && selectedTrack && (
-        <div className="modal-overlay" onClick={closeLyricsModal}>
-          <div className="lyrics-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>{selectedTrack.title}</h2>
-              <button className="close-button" onClick={closeLyricsModal}>×</button>
-            </div>
-            <div className="modal-body">
-              {selectedTrack.lyrics ? (
-                <pre className="lyrics-text">{selectedTrack.lyrics}</pre>
-              ) : (
-                <p className="no-lyrics">No lyrics available for this track.</p>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

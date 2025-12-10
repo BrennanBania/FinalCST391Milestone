@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import ReviewCard from '../components/ReviewCard';
 import { fetchAPI } from '../utils/api';
 
@@ -6,9 +6,13 @@ function MyReviewsPage({ reviews, appState }) {
   const [myReviews, setMyReviews] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [editingData, setEditingData] = useState({ rating: 0, reviewText: '' });
+  const hasFetchedRef = useRef(false);
 
   useEffect(() => {
-    appState.fetchMyReviews();
+    if (!hasFetchedRef.current) {
+      hasFetchedRef.current = true;
+      appState.fetchMyReviews();
+    }
   }, []);
 
   useEffect(() => {

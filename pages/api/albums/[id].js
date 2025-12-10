@@ -99,7 +99,7 @@ async function handleDelete(req, res, id) {
       return res.status(404).json({ error: 'Album not found' });
     }
 
-    res.json({ message: 'Album deleted successfully' });
+    res.status(200).json({ message: 'Album deleted successfully' });
   } catch (error) {
     console.error('Error deleting album:', error);
     res.status(500).json({ error: 'Server error' });

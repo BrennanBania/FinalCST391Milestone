@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { fetchAPI } from '../utils/api';
+import { useRouter } from 'next/router';
 
-function EditAlbumPage({ appState, onNavigate }) {
+function EditAlbumPage({ appState }) {
+  const router = useRouter();
   const [title, setTitle] = useState('');
   const [artist_name, setArtistName] = useState('');
   const [genre, setGenre] = useState('');
@@ -32,7 +34,9 @@ function EditAlbumPage({ appState, onNavigate }) {
       });
 
       if (response.ok) {
-        appState.fetchAlbums();
+        if (appState && appState.fetchAlbums) {
+          appState.fetchAlbums();
+        }
         setTitle('');
         setArtistName('');
         setGenre('');
@@ -40,7 +44,11 @@ function EditAlbumPage({ appState, onNavigate }) {
         setDescription('');
         setImageUrl('');
         setVideoUrl('');
-        onNavigate('albums');
+        if (onNavigate) {
+          onNavigate('albums');
+        } else {
+          router.push('/albums');
+        }
       } else {
         setError(response.error || 'Error creating album');
       }
@@ -135,7 +143,7 @@ function EditAlbumPage({ appState, onNavigate }) {
           </button>
           <button
             type="button"
-            onClick={() => onNavigate('albums')}
+            onClick={() => router.push('/albums')}
             className="cancel-button"
           >
             Cancel

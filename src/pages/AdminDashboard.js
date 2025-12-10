@@ -1,7 +1,20 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { fetchAPI } from '../utils/api';
+import { useRouter } from 'next/router';
+
+// Helper function to handle API responses with consistent error handling
+const handleApiResponse = (response, successMessage, errorCallback) => {
+  if (response.ok) {
+    if (successMessage) alert(successMessage);
+    return true;
+  } else {
+    alert(response.error || errorCallback || 'Operation failed');
+    return false;
+  }
+};
 
 function AdminDashboard({ albumRequests, appState, onNavigate }) {
+  const router = useRouter();
   const [requests, setRequests] = useState([]);
   const [view, setView] = useState('overview'); // 'overview', 'requests', 'reviews', 'albums', 'tracks', 'users'
   const [searchTerm, setSearchTerm] = useState('');
@@ -15,7 +28,7 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
   const [selectedAlbumForTracks, setSelectedAlbumForTracks] = useState(null);
   const [tracks, setTracks] = useState([]);
   const [editingTrack, setEditingTrack] = useState(null);
-  const [newTrack, setNewTrack] = useState({ track_number: '', title: '', duration: '', lyrics: '' });
+  const [newTrack, setNewTrack] = useState({ track_number: '', title: '', duration: '', lyrics: '', video_url: '' });
   const [editFormData, setEditFormData] = useState({
     title: '',
     artist_name: '',
@@ -37,17 +50,23 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
     track_number: '',
     title: '',
     duration: '',
-    lyrics: ''
+    lyrics: '',
+    video_url: ''
   });
+  const hasFetchedInitialDataRef = useRef(false);
 
   useEffect(() => {
-    appState.fetchAlbumRequests();
-    appState.fetchAllReviews();
-    fetchUsers(); // Always fetch users for the dashboard count
+    // Only fetch on initial load
+    if (!hasFetchedInitialDataRef.current) {
+      hasFetchedInitialDataRef.current = true;
+      appState.fetchAlbumRequests();
+      appState.fetchAllReviews();
+    }
   }, []);
 
   useEffect(() => {
-    if (view === 'users') {
+    // Only fetch users when needed
+    if (view === 'users' && users.length === 0) {
       fetchUsers();
     }
   }, [view]);
@@ -61,9 +80,14 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
       const response = await fetchAPI('/api/users');
       if (response.ok && response.data) {
         setUsers(response.data);
+      } else {
+        console.error('Failed to fetch users:', response.error);
+        // Set empty array on error to avoid showing stale data
+        setUsers([]);
       }
     } catch (error) {
       console.error('Error fetching users:', error);
+      setUsers([]);
     }
   };
 
@@ -79,21 +103,15 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
   };
 
   const handleUpdateUserRole = async (userId, newRole) => {
-    if (!confirm(`Are you sure you want to change this user's role to ${newRole}?`)) {
-      return;
-    }
+    if (!confirm(`Are you sure you want to change this user's role to ${newRole}?`)) return;
 
     try {
       const response = await fetchAPI(`/api/users/${userId}`, {
         method: 'PATCH',
         body: JSON.stringify({ role: newRole })
       });
-
-      if (response.ok) {
-        alert('User role updated successfully!');
+      if (handleApiResponse(response, 'User role updated successfully!', 'Error updating user role')) {
         fetchUsers();
-      } else {
-        alert(response.error || 'Error updating user role');
       }
     } catch (error) {
       console.error('Error updating user role:', error);
@@ -107,22 +125,16 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
   };
 
   const handleApprove = async (requestId) => {
-    if (!confirm('Are you sure you want to approve this album request?')) {
-      return;
-    }
+    if (!confirm('Are you sure you want to approve this album request?')) return;
     
     try {
       const response = await fetchAPI(`/api/album-requests/${requestId}`, {
         method: 'PUT',
         body: JSON.stringify({ status: 'approved' })
       });
-      
-      if (response.ok) {
-        alert('Album request approved successfully!');
+      if (handleApiResponse(response, 'Album request approved successfully!', 'Error approving request')) {
         appState.fetchAlbumRequests();
         appState.fetchAlbums();
-      } else {
-        alert(response.error || 'Error approving request');
       }
     } catch (error) {
       console.error('Error approving request:', error);
@@ -131,21 +143,15 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
   };
 
   const handleDeny = async (requestId) => {
-    if (!confirm('Are you sure you want to deny this album request?')) {
-      return;
-    }
+    if (!confirm('Are you sure you want to deny this album request?')) return;
     
     try {
       const response = await fetchAPI(`/api/album-requests/${requestId}`, {
         method: 'PUT',
         body: JSON.stringify({ status: 'denied' })
       });
-      
-      if (response.ok) {
-        alert('Album request denied');
+      if (handleApiResponse(response, 'Album request denied', 'Error denying request')) {
         appState.fetchAlbumRequests();
-      } else {
-        alert(response.error || 'Error denying request');
       }
     } catch (error) {
       console.error('Error denying request:', error);
@@ -183,13 +189,9 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
         method: 'PATCH',
         body: JSON.stringify(editFormData)
       });
-      
-      if (response.ok) {
-        alert('Album request updated successfully!');
+      if (handleApiResponse(response, 'Album request updated successfully!', 'Error updating request')) {
         setEditingRequest(null);
         appState.fetchAlbumRequests();
-      } else {
-        alert(response.error || 'Error updating request');
       }
     } catch (error) {
       console.error('Error updating request:', error);
@@ -229,13 +231,9 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
         method: 'PUT',
         body: JSON.stringify(editAlbumData)
       });
-      
-      if (response.ok) {
-        alert('Album updated successfully!');
+      if (handleApiResponse(response, 'Album updated successfully!', 'Error updating album')) {
         setEditingAlbum(null);
         appState.fetchAlbums();
-      } else {
-        alert(response.error || 'Error updating album');
       }
     } catch (error) {
       console.error('Error updating album:', error);
@@ -244,20 +242,12 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
   };
 
   const handleDeleteAlbum = async (albumId) => {
-    if (!confirm('Are you sure you want to delete this album? This action cannot be undone.')) {
-      return;
-    }
+    if (!confirm('Are you sure you want to delete this album? This action cannot be undone.')) return;
     
     try {
-      const response = await fetchAPI(`/api/albums/${albumId}`, {
-        method: 'DELETE'
-      });
-      
-      if (response.ok) {
-        alert('Album deleted successfully!');
+      const response = await fetchAPI(`/api/albums/${albumId}`, { method: 'DELETE' });
+      if (handleApiResponse(response, 'Album deleted successfully!', 'Error deleting album')) {
         appState.fetchAlbums();
-      } else {
-        alert(response.error || 'Error deleting album');
       }
     } catch (error) {
       console.error('Error deleting album:', error);
@@ -296,6 +286,8 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
     try {
       const response = await fetchAPI(`/api/tracks?albumId=${albumId}`);
       if (response.ok) {
+        console.log('Fetched tracks:', response.data);
+        console.log('First track keys:', response.data[0] ? Object.keys(response.data[0]) : 'No tracks');
         setTracks(response.data || []);
       } else {
         console.error('Error fetching tracks:', response.error);
@@ -326,13 +318,14 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
           track_number: parseInt(newTrack.track_number),
           title: newTrack.title,
           duration: newTrack.duration || null,
-          lyrics: newTrack.lyrics || null
+          lyrics: newTrack.lyrics || null,
+          video_url: newTrack.video_url || null
         })
       });
 
       if (response.ok) {
         alert('Track added successfully!');
-        setNewTrack({ track_number: '', title: '', duration: '', lyrics: '' });
+        setNewTrack({ track_number: '', title: '', duration: '', lyrics: '', video_url: '' });
         fetchTracks(selectedAlbumForTracks);
       } else {
         alert(response.error || 'Error adding track');
@@ -344,16 +337,29 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
   };
 
   const handleEditTrack = (track) => {
+    console.log('Editing track:', track);
+    console.log('Track ID:', track.track_id);
     setEditingTrack(track.track_id);
     setEditTrackData({
       track_number: track.track_number,
       title: track.title,
       duration: track.duration || '',
-      lyrics: track.lyrics || ''
+      lyrics: track.lyrics || '',
+      video_url: track.video_url || ''
     });
   };
 
   const handleSaveTrack = async (trackId) => {
+    console.log('Saving track with ID:', trackId);
+    console.log('editingTrack state:', editingTrack);
+    console.log('Track data:', editTrackData);
+    
+    if (!trackId) {
+      alert('Error: Track ID is missing');
+      console.error('Track ID is undefined or null');
+      return;
+    }
+    
     if (!editTrackData.track_number || !editTrackData.title) {
       alert('Track number and title are required');
       return;
@@ -366,14 +372,15 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
           track_number: parseInt(editTrackData.track_number),
           title: editTrackData.title,
           duration: editTrackData.duration || null,
-          lyrics: editTrackData.lyrics || null
+          lyrics: editTrackData.lyrics || null,
+          video_url: editTrackData.video_url || null
         })
       });
 
       if (response.ok) {
         alert('Track updated successfully!');
         setEditingTrack(null);
-        setEditTrackData({ track_number: '', title: '', duration: '', lyrics: '' });
+        setEditTrackData({ track_number: '', title: '', duration: '', lyrics: '', video_url: '' });
         fetchTracks(selectedAlbumForTracks);
       } else {
         alert(response.error || 'Error updating track');
@@ -435,7 +442,13 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
             <h3>Manage Users</h3>
             <p><span className="dashboard-number">{users.length || 0}</span> registered user{(users.length || 0) !== 1 ? 's' : ''}</p>
           </div>
-          <div className="dashboard-card" onClick={() => onNavigate('edit-album')}>
+          <div className="dashboard-card" onClick={() => { 
+            if (onNavigate) {
+              onNavigate('edit-album');
+            } else {
+              router.push('/edit-album');
+            }
+          }}>
             <h3>Add Album</h3>
             <p><span className="dashboard-number">+</span> Add new album to collection</p>
           </div>
@@ -833,7 +846,7 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
                         <p className="artist-name">{album.artist_name}</p>
                         <p><strong>Genre:</strong> {album.genre}</p>
                         <p><strong>Year:</strong> {album.release_year}</p>
-                        <p><strong>Rating:</strong> {album.avg_rating ? album.avg_rating.toFixed(1) : 'N/A'} ⭐</p>
+                        <p><strong>Rating:</strong> {album.avg_rating ? album.avg_rating.toFixed(1) : 'N/A'}</p>
                         <p><strong>Reviews:</strong> {album.review_count || 0}</p>
                       </div>
                       <div className="review-right">
@@ -918,6 +931,13 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
                   placeholder="Duration (e.g., 3:45)"
                   className="form-input"
                 />
+                <input
+                  type="text"
+                  value={newTrack.video_url}
+                  onChange={(e) => setNewTrack({...newTrack, video_url: e.target.value})}
+                  placeholder="Video URL (YouTube link, optional)"
+                  className="form-input"
+                />
                 <textarea
                   value={newTrack.lyrics}
                   onChange={(e) => setNewTrack({...newTrack, lyrics: e.target.value})}
@@ -959,6 +979,13 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
                             placeholder="Duration (e.g., 3:45)"
                             className="form-input"
                           />
+                          <input
+                            type="text"
+                            value={editTrackData.video_url}
+                            onChange={(e) => setEditTrackData({...editTrackData, video_url: e.target.value})}
+                            placeholder="Video URL (YouTube link, optional)"
+                            className="form-input"
+                          />
                           <textarea
                             value={editTrackData.lyrics}
                             onChange={(e) => setEditTrackData({...editTrackData, lyrics: e.target.value})}
@@ -967,12 +994,12 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
                             rows="8"
                           />
                           <div className="request-actions">
-                            <button onClick={() => handleSaveTrack(track.track_id)} className="approve-button">
+                            <button onClick={() => handleSaveTrack(editingTrack)} className="approve-button">
                               Save
                             </button>
                             <button onClick={() => {
                               setEditingTrack(null);
-                              setEditTrackData({ track_number: '', title: '', duration: '', lyrics: '' });
+                              setEditTrackData({ track_number: '', title: '', duration: '', lyrics: '', video_url: '' });
                             }} className="deny-button">
                               Cancel
                             </button>

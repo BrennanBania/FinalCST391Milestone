@@ -20,6 +20,14 @@ export const useAppState = () => {
   const [editAlbum, setEditAlbum] = useState(null);
   const [flaggedSectionCollapsed, setFlaggedSectionCollapsed] = useState(false);
 
+  // Cache timestamps to prevent redundant API calls
+  const [lastFetchTimes, setLastFetchTimes] = useState({
+    albums: 0,
+    artists: 0,
+    topAlbums: 0
+  });
+  const CACHE_DURATION = 60000; // 1 minute cache
+
   // Initialize auth state
   useEffect(() => {
     const token = getToken();
@@ -33,37 +41,55 @@ export const useAppState = () => {
     }
   }, []);
 
-  const fetchAlbums = useCallback(async () => {
+  const fetchAlbums = useCallback(async (force = false) => {
+    const now = Date.now();
+    if (!force && albums.length > 0 && (now - lastFetchTimes.albums) < CACHE_DURATION) {
+      return; // Use cached data
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/albums`);
       const data = await response.json();
       setAlbums(Array.isArray(data) ? data : data.albums || []);
+      setLastFetchTimes(prev => ({ ...prev, albums: now }));
     } catch (error) {
       console.error('Error fetching albums:', error);
       setAlbums([]);
     }
-  }, []);
+  }, [albums.length, lastFetchTimes.albums]);
 
-  const fetchArtists = useCallback(async () => {
+  const fetchArtists = useCallback(async (force = false) => {
+    const now = Date.now();
+    if (!force && artists.length > 0 && (now - lastFetchTimes.artists) < CACHE_DURATION) {
+      return; // Use cached data
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/artists`);
       const data = await response.json();
       setArtists(Array.isArray(data) ? data : data.artists || []);
+      setLastFetchTimes(prev => ({ ...prev, artists: now }));
     } catch (error) {
       console.error('Error fetching artists:', error);
       setArtists([]);
     }
-  }, []);
+  }, [artists.length, lastFetchTimes.artists]);
 
-  const fetchTopAlbums = useCallback(async () => {
+  const fetchTopAlbums = useCallback(async (force = false) => {
+    const now = Date.now();
+    if (!force && topAlbums.length > 0 && (now - lastFetchTimes.topAlbums) < CACHE_DURATION) {
+      return; // Use cached data
+    }
+
     try {
       const response = await fetch(`${API_BASE_URL}/api/albums/top`);
       const data = await response.json();
       setTopAlbums(data);
+      setLastFetchTimes(prev => ({ ...prev, topAlbums: now }));
     } catch (error) {
       setTopAlbums([]);
     }
-  }, []);
+  }, [topAlbums.length, lastFetchTimes.topAlbums]);
 
   const fetchReviews = useCallback(async (albumId) => {
     try {

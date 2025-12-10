@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Navigation from '../src/components/Navigation';
 import { useAppState } from '../src/utils/useAppState';
-import { decodeToken } from '../src/utils/api';
+import { decodeToken, getToken, setToken, removeToken } from '../src/utils/api';
 import '../src/index.css';
 
 function MyApp({ Component, pageProps }) {
@@ -15,7 +15,7 @@ function MyApp({ Component, pageProps }) {
 
   // Initialize on mount
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = getToken();
     const storedAdmin = localStorage.getItem('isAdmin') === 'true';
     const storedUsername = localStorage.getItem('username');
     
@@ -29,14 +29,12 @@ function MyApp({ Component, pageProps }) {
         }
       } catch (error) {
         console.error('Token decode error:', error);
-        localStorage.removeItem('token');
+        removeToken();
         localStorage.removeItem('isAdmin');
         localStorage.removeItem('username');
       }
     }
-    // Fetch initial data
-    appState.fetchAlbums();
-    appState.fetchArtists();
+    // Let individual pages fetch their own data to avoid unnecessary API calls
   }, []);
 
   const handleNavigate = (path) => {
@@ -44,7 +42,7 @@ function MyApp({ Component, pageProps }) {
   };
 
   const handleLogin = (token, user) => {
-    localStorage.setItem('token', token);
+    setToken(token);
     localStorage.setItem('isAdmin', user.role === 'admin' ? 'true' : 'false');
     localStorage.setItem('username', user.username);
     setIsLoggedIn(true);
@@ -54,7 +52,7 @@ function MyApp({ Component, pageProps }) {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    removeToken();
     localStorage.removeItem('isAdmin');
     localStorage.removeItem('username');
     setIsLoggedIn(false);

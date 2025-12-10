@@ -43,7 +43,9 @@ function RequestAlbumPage({ appState, onNavigate }) {
         if (appState && appState.fetchAlbumRequests) {
           await appState.fetchAlbumRequests();
         }
-        setTimeout(() => onNavigate('albums'), 2000);
+        if (onNavigate) {
+          setTimeout(() => onNavigate('albums'), 2000);
+        }
       } else {
         setError(response.error || 'Error submitting request');
       }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import AlbumCard from '../components/AlbumCard';
 import ReviewCard from '../components/ReviewCard';
 import { fetchAPI } from '../utils/api';
@@ -7,32 +7,12 @@ function HomePage({ topAlbums, onViewAlbum, isLoggedIn, username, albums = [] })
   const [recentlyViewed, setRecentlyViewed] = useState([]);
   const [recommended, setRecommended] = useState([]);
   const [recentReviews, setRecentReviews] = useState([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const hasFetchedReviewsRef = useRef(false);
 
-  useEffect(() => {
-    // Load recently viewed from localStorage
-    if (isLoggedIn && albums && albums.length > 0) {
-      const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
-      const viewedAlbums = viewed
-        .map(id => albums.find(a => a.album_id === id))
-        .filter(Boolean)
-        .slice(0, 4);
-      setRecentlyViewed(viewedAlbums);
-    }
-
-    // Fetch recent reviews
-    fetchRecentReviews();
-
-    // Get recommended albums (albums not in user's recently viewed)
-    if (albums && albums.length > 0) {
-      const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
-      const notViewed = albums.filter(a => !viewed.includes(a.album_id));
-      const shuffled = notViewed.sort(() => 0.5 - Math.random());
-      setRecommended(shuffled.slice(0, 4));
-    }
-  }, [isLoggedIn, albums]);
-
-  const fetchRecentReviews = async () => {
+  const fetchRecentReviews = useCallback(async () => {
     try {
+      setIsLoadingReviews(true);
       const response = await fetchAPI('/api/reviews');
       if (response.ok && response.data) {
         const sorted = response.data
@@ -43,8 +23,33 @@ function HomePage({ topAlbums, onViewAlbum, isLoggedIn, username, albums = [] })
       }
     } catch (error) {
       console.error('Error fetching recent reviews:', error);
+    } finally {
+      setIsLoadingReviews(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    // Only fetch recent reviews once if logged in
+    if (isLoggedIn && !hasFetchedReviewsRef.current) {
+      hasFetchedReviewsRef.current = true;
+      fetchRecentReviews();
+    }
+
+    // Load recently viewed from localStorage
+    if (isLoggedIn && albums && albums.length > 0) {
+      const viewed = JSON.parse(localStorage.getItem('recentlyViewed') || '[]');
+      const viewedAlbums = viewed
+        .map(id => albums.find(a => a.album_id === id))
+        .filter(Boolean)
+        .slice(0, 4);
+      setRecentlyViewed(viewedAlbums);
+
+      // Get recommended albums (albums not in user's recently viewed)
+      const notViewed = albums.filter(a => !viewed.includes(a.album_id));
+      const shuffled = notViewed.sort(() => 0.5 - Math.random());
+      setRecommended(shuffled.slice(0, 4));
+    }
+  }, [isLoggedIn, albums, fetchRecentReviews]);
 
   return (
     <div className="page-container">
@@ -60,7 +65,7 @@ function HomePage({ topAlbums, onViewAlbum, isLoggedIn, username, albums = [] })
           {topAlbums && topAlbums.length > 0 ? (
             topAlbums.map(album => (
               <AlbumCard
-                key={album.id}
+                key={album.album_id || album.id}
                 album={album}
                 onView={() => onViewAlbum(album)}
                 showViewButton={isLoggedIn}
@@ -104,27 +109,33 @@ function HomePage({ topAlbums, onViewAlbum, isLoggedIn, username, albums = [] })
         </section>
       )}
 
-      {recentReviews.length > 0 && (
+      {isLoggedIn && (
         <section className="home-section">
           <h2>Recent Reviews</h2>
-          <div className="reviews-grid">
-            {recentReviews.map(review => (
-              <ReviewCard
-                key={review.review_id}
-                review={review}
-                isEditing={false}
-                editingData={{}}
-                onEdit={() => {}}
-                onSave={() => {}}
-                onCancel={() => {}}
-                onDelete={() => {}}
-                onFlag={() => {}}
-                onUnflag={() => {}}
-                isFlagged={false}
-                canUnflag={false}
-              />
-            ))}
-          </div>
+          {isLoadingReviews ? (
+            <p>Loading reviews...</p>
+          ) : recentReviews.length > 0 ? (
+            <div className="reviews-grid">
+              {recentReviews.map(review => (
+                <ReviewCard
+                  key={review.review_id}
+                  review={review}
+                  isEditing={false}
+                  editingData={{}}
+                  onEdit={() => {}}
+                  onSave={() => {}}
+                  onCancel={() => {}}
+                  onDelete={() => {}}
+                  onFlag={() => {}}
+                  onUnflag={() => {}}
+                  isFlagged={false}
+                  canUnflag={false}
+                />
+              ))}
+            </div>
+          ) : (
+            <p>No reviews yet</p>
+          )}
         </section>
       )}
     </div>

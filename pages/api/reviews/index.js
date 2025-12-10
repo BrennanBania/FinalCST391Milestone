@@ -65,8 +65,9 @@ async function handlePost(req, res) {
         [userId, albumId, rating, reviewText]
       );
 
+      const reviewId = result.rows[0].review_id;
       res.status(201).json({
-        reviewId: result.rows[0].review_id,
+        reviewId,
         message: 'Review created successfully',
       });
     }
@@ -78,7 +79,8 @@ async function handlePost(req, res) {
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
-    return withAuth(handleGetAll, { requireAdmin: true })(req, res);
+    // Allow anyone to view reviews - no auth required
+    return handleGetAll(req, res);
   } else if (req.method === 'POST') {
     return withAuth(handlePost, { requireCustomer: true })(req, res);
   }

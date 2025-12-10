@@ -13,9 +13,11 @@ function verifyToken(req) {
 export default async function handler(req, res) {
   try {
     const user = verifyToken(req);
+    console.log('Users API - Authenticated user:', user);
     
     // Only admins can access user management
     if (user.role !== 'admin') {
+      console.log('Users API - Not admin, role:', user.role);
       return res.status(403).json({ error: 'Admin access required' });
     }
 
@@ -26,12 +28,13 @@ export default async function handler(req, res) {
          FROM users 
          ORDER BY created_at DESC`
       );
-      return res.status(200).json(result.rows);
+      console.log('Users API - Returning', result.rows.length, 'users');
+      return res.json(result.rows);
     }
 
     return res.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
-    console.error('Users API error:', error);
-    return res.status(401).json({ error: 'Unauthorized' });
+    console.error('Users API error:', error.message);
+    return res.status(401).json({ error: 'Unauthorized', message: error.message });
   }
 }

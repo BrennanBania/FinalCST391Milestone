@@ -24,6 +24,28 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
     setSelectedTrack(null);
   };
 
+  const getYouTubeEmbedUrl = (url) => {
+    if (!url) return null;
+    
+    // Handle different YouTube URL formats
+    let videoId = null;
+    
+    // Standard watch URL: https://www.youtube.com/watch?v=VIDEO_ID
+    if (url.includes('youtube.com/watch?v=')) {
+      videoId = url.split('v=')[1]?.split('&')[0];
+    }
+    // Short URL: https://youtu.be/VIDEO_ID
+    else if (url.includes('youtu.be/')) {
+      videoId = url.split('youtu.be/')[1]?.split('?')[0];
+    }
+    // Embed URL: https://www.youtube.com/embed/VIDEO_ID
+    else if (url.includes('youtube.com/embed/')) {
+      videoId = url.split('embed/')[1]?.split('?')[0];
+    }
+    
+    return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+  };
+
   useEffect(() => {
     fetchReviews();
   }, [album.album_id]);
@@ -169,13 +191,23 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
           {album.description && (
             <p className="description">{album.description}</p>
           )}
-          {album.video_url && (
-            <a href={album.video_url} target="_blank" rel="noopener noreferrer" className="youtube-link">
-              ▶ Watch on YouTube
-            </a>
-          )}
         </div>
       </div>
+
+      {album.video_url && getYouTubeEmbedUrl(album.video_url) && (
+        <div className="video-section">
+          <h2>Featured Video</h2>
+          <div className="video-container">
+            <iframe
+              src={getYouTubeEmbedUrl(album.video_url)}
+              title="Album Video"
+              frameBorder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        </div>
+      )}
 
       {tracks && tracks.length > 0 && (
         <div className="tracks-section">

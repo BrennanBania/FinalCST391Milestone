@@ -43,6 +43,10 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
   useEffect(() => {
     appState.fetchAlbumRequests();
     appState.fetchAllReviews();
+    fetchUsers(); // Always fetch users for the dashboard count
+  }, []);
+
+  useEffect(() => {
     if (view === 'users') {
       fetchUsers();
     }

@@ -3,12 +3,16 @@ import { fetchAPI } from '../utils/api';
 
 function AdminDashboard({ albumRequests, appState, onNavigate }) {
   const [requests, setRequests] = useState([]);
-  const [view, setView] = useState('overview'); // 'overview', 'requests', 'reviews', 'albums'
+  const [view, setView] = useState('overview'); // 'overview', 'requests', 'reviews', 'albums', 'tracks'
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [sortBy, setSortBy] = useState('recent');
   const [editingRequest, setEditingRequest] = useState(null);
   const [editingAlbum, setEditingAlbum] = useState(null);
+  const [selectedAlbumForTracks, setSelectedAlbumForTracks] = useState(null);
+  const [tracks, setTracks] = useState([]);
+  const [editingTrack, setEditingTrack] = useState(null);
+  const [newTrack, setNewTrack] = useState({ track_number: '', title: '', duration: '' });
   const [editFormData, setEditFormData] = useState({
     title: '',
     artist_name: '',
@@ -25,6 +29,11 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
     description: '',
     image_url: '',
     video_url: ''
+  });
+  const [editTrackData, setEditTrackData] = useState({
+    track_number: '',
+    title: '',
+    duration: ''
   });
 
   useEffect(() => {
@@ -221,6 +230,118 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
     }
   };
 
+  // Track Management Functions
+  const fetchTracks = async (albumId) => {
+    try {
+      const response = await fetchAPI(`/api/tracks?albumId=${albumId}`);
+      if (response.ok) {
+        setTracks(response.data || []);
+      } else {
+        console.error('Error fetching tracks:', response.error);
+        setTracks([]);
+      }
+    } catch (error) {
+      console.error('Error fetching tracks:', error);
+      setTracks([]);
+    }
+  };
+
+  const handleAddTrack = async () => {
+    if (!selectedAlbumForTracks) {
+      alert('Please select an album first');
+      return;
+    }
+
+    if (!newTrack.track_number || !newTrack.title) {
+      alert('Track number and title are required');
+      return;
+    }
+
+    try {
+      const response = await fetchAPI('/api/tracks', {
+        method: 'POST',
+        body: JSON.stringify({
+          album_id: selectedAlbumForTracks,
+          track_number: parseInt(newTrack.track_number),
+          title: newTrack.title,
+          duration: newTrack.duration || null
+        })
+      });
+
+      if (response.ok) {
+        alert('Track added successfully!');
+        setNewTrack({ track_number: '', title: '', duration: '' });
+        fetchTracks(selectedAlbumForTracks);
+      } else {
+        alert(response.error || 'Error adding track');
+      }
+    } catch (error) {
+      console.error('Error adding track:', error);
+      alert('Error adding track');
+    }
+  };
+
+  const handleEditTrack = (track) => {
+    setEditingTrack(track.track_id);
+    setEditTrackData({
+      track_number: track.track_number,
+      title: track.title,
+      duration: track.duration || ''
+    });
+  };
+
+  const handleSaveTrack = async (trackId) => {
+    if (!editTrackData.track_number || !editTrackData.title) {
+      alert('Track number and title are required');
+      return;
+    }
+
+    try {
+      const response = await fetchAPI(`/api/tracks/${trackId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          track_number: parseInt(editTrackData.track_number),
+          title: editTrackData.title,
+          duration: editTrackData.duration || null
+        })
+      });
+
+      if (response.ok) {
+        alert('Track updated successfully!');
+        setEditingTrack(null);
+        setEditTrackData({ track_number: '', title: '', duration: '' });
+        fetchTracks(selectedAlbumForTracks);
+      } else {
+        alert(response.error || 'Error updating track');
+      }
+    } catch (error) {
+      console.error('Error updating track:', error);
+      alert('Error updating track');
+    }
+  };
+
+  const handleDeleteTrack = async (trackId) => {
+    if (!confirm('Are you sure you want to delete this track? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetchAPI(`/api/tracks/${trackId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        alert('Track deleted successfully!');
+        fetchTracks(selectedAlbumForTracks);
+      } else {
+        alert(response.error || 'Error deleting track');
+      }
+    } catch (error) {
+      console.error('Error deleting track:', error);
+      alert('Error deleting track');
+    }
+  };
+
   const pendingRequests = requests.filter(r => r.status === 'pending');
   const processedRequests = requests.filter(r => r.status !== 'pending');
   const flaggedReviews = (appState.allReviews || []).filter(r => r.is_flagged);
@@ -241,6 +362,10 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
           <div className="dashboard-card" onClick={() => setView('albums')}>
             <h3>Manage Albums</h3>
             <p><span className="dashboard-number">{appState.albums?.length || 0}</span> album{(appState.albums?.length || 0) !== 1 ? 's' : ''} in collection</p>
+          </div>
+          <div className="dashboard-card" onClick={() => setView('tracks')}>
+            <h3>Manage Tracks</h3>
+            <p><span className="dashboard-number">♫</span> Edit album tracks</p>
           </div>
           <div className="dashboard-card" onClick={() => onNavigate('edit-album')}>
             <h3>Add Album</h3>
@@ -665,6 +790,139 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
               <p className="no-results">No albums found matching your filters.</p>
             )}
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (view === 'tracks') {
+    return (
+      <div className="page-container admin-dashboard">
+        <button onClick={() => setView('overview')} className="back-btn">← Back to Dashboard</button>
+        <h1>Manage Tracks</h1>
+
+        <div className="admin-section">
+          <h2>Select Album</h2>
+          <select 
+            value={selectedAlbumForTracks || ''} 
+            onChange={(e) => {
+              const albumId = e.target.value;
+              setSelectedAlbumForTracks(albumId);
+              if (albumId) {
+                fetchTracks(albumId);
+              } else {
+                setTracks([]);
+              }
+            }}
+            className="form-input"
+          >
+            <option value="">-- Select an album --</option>
+            {appState.albums && appState.albums.map(album => (
+              <option key={album.album_id} value={album.album_id}>
+                {album.title} - {album.artist_name}
+              </option>
+            ))}
+          </select>
+
+          {selectedAlbumForTracks && (
+            <>
+              <h2>Add New Track</h2>
+              <div className="add-track-form">
+                <input
+                  type="number"
+                  value={newTrack.track_number}
+                  onChange={(e) => setNewTrack({...newTrack, track_number: e.target.value})}
+                  placeholder="Track Number"
+                  className="form-input"
+                  min="1"
+                />
+                <input
+                  type="text"
+                  value={newTrack.title}
+                  onChange={(e) => setNewTrack({...newTrack, title: e.target.value})}
+                  placeholder="Track Title"
+                  className="form-input"
+                />
+                <input
+                  type="text"
+                  value={newTrack.duration}
+                  onChange={(e) => setNewTrack({...newTrack, duration: e.target.value})}
+                  placeholder="Duration (e.g., 3:45)"
+                  className="form-input"
+                />
+                <button onClick={handleAddTrack} className="approve-button">
+                  Add Track
+                </button>
+              </div>
+
+              <h2>Track List ({tracks.length})</h2>
+              <div className="tracks-list">
+                {tracks && tracks.length > 0 ? (
+                  tracks.sort((a, b) => a.track_number - b.track_number).map(track => (
+                    <div key={track.track_id} className="request-card">
+                      {editingTrack === track.track_id ? (
+                        <div className="edit-track-form">
+                          <input
+                            type="number"
+                            value={editTrackData.track_number}
+                            onChange={(e) => setEditTrackData({...editTrackData, track_number: e.target.value})}
+                            placeholder="Track Number"
+                            className="form-input"
+                            min="1"
+                          />
+                          <input
+                            type="text"
+                            value={editTrackData.title}
+                            onChange={(e) => setEditTrackData({...editTrackData, title: e.target.value})}
+                            placeholder="Track Title"
+                            className="form-input"
+                          />
+                          <input
+                            type="text"
+                            value={editTrackData.duration}
+                            onChange={(e) => setEditTrackData({...editTrackData, duration: e.target.value})}
+                            placeholder="Duration (e.g., 3:45)"
+                            className="form-input"
+                          />
+                          <div className="request-actions">
+                            <button onClick={() => handleSaveTrack(track.track_id)} className="approve-button">
+                              Save
+                            </button>
+                            <button onClick={() => {
+                              setEditingTrack(null);
+                              setEditTrackData({ track_number: '', title: '', duration: '' });
+                            }} className="deny-button">
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <div className="review-left">
+                            <h3>Track {track.track_number}</h3>
+                            <p><strong>{track.title}</strong></p>
+                            {track.duration && <p className="track-duration">{track.duration}</p>}
+                          </div>
+                          <div className="review-right">
+                            <div className="review-actions">
+                              <button onClick={() => handleEditTrack(track)} className="edit-button">
+                                Edit
+                              </button>
+                              <button onClick={() => handleDeleteTrack(track.track_id)} className="deny-button">
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="no-results">No tracks found for this album.</p>
+                )}
+              </div>
+            </>
+          )}
         </div>
       </div>
     );

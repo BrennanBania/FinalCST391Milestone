@@ -11,6 +11,18 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
   const [averageRating, setAverageRating] = useState(0);
   const [reviewCount, setReviewCount] = useState(0);
   const [reviewsCollapsed, setReviewsCollapsed] = useState(false);
+  const [selectedTrack, setSelectedTrack] = useState(null);
+  const [showLyricsModal, setShowLyricsModal] = useState(false);
+
+  const handleTrackClick = (track) => {
+    setSelectedTrack(track);
+    setShowLyricsModal(true);
+  };
+
+  const closeLyricsModal = () => {
+    setShowLyricsModal(false);
+    setSelectedTrack(null);
+  };
 
   useEffect(() => {
     fetchReviews();
@@ -170,7 +182,12 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
           <h2>Track List</h2>
           <ol className="track-list">
             {tracks.map(track => (
-              <li key={track.track_id} className="track-item">
+              <li 
+                key={track.track_id} 
+                className="track-item clickable"
+                onClick={() => handleTrackClick(track)}
+                title="Click to view lyrics"
+              >
                 <span className="track-number">{track.track_number}.</span>
                 <span className="track-title">{track.title}</span>
                 {track.duration && (
@@ -290,6 +307,25 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
           )}
         </div>
       </div>
+
+      {/* Lyrics Modal */}
+      {showLyricsModal && selectedTrack && (
+        <div className="modal-overlay" onClick={closeLyricsModal}>
+          <div className="lyrics-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{selectedTrack.title}</h2>
+              <button className="close-button" onClick={closeLyricsModal}>×</button>
+            </div>
+            <div className="modal-body">
+              {selectedTrack.lyrics ? (
+                <pre className="lyrics-text">{selectedTrack.lyrics}</pre>
+              ) : (
+                <p className="no-lyrics">No lyrics available for this track.</p>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

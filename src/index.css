@@ -916,7 +916,11 @@ body {
   align-items: center;
   padding: 1rem 0;
   border-bottom: 1px solid #f0f0f0;
-  transition: background 0.2s;
+  transition: all 0.2s;
+}
+
+.track-item.clickable {
+  cursor: pointer;
 }
 
 .track-item:hover {
@@ -925,6 +929,11 @@ body {
   margin-left: -0.5rem;
   margin-right: -0.5rem;
   padding-right: 0.5rem;
+}
+
+.track-item.clickable:hover {
+  background: #e8f4f8;
+  transform: translateX(4px);
 }
 
 .track-item:last-child {
@@ -1991,4 +2000,113 @@ body {
   margin: 0;
   color: #1565c0;
   font-weight: 500;
+}
+
+/* Lyrics Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.lyrics-modal {
+  background: white;
+  border-radius: 12px;
+  max-width: 700px;
+  width: 90%;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.modal-header {
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.close-button {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background 0.2s;
+  line-height: 1;
+}
+
+.close-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.modal-body {
+  padding: 2rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.lyrics-text {
+  font-family: 'Georgia', 'Times New Roman', serif;
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #333;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  margin: 0;
+}
+
+.no-lyrics {
+  text-align: center;
+  color: #999;
+  font-size: 1.1rem;
+  padding: 3rem 1rem;
+  font-style: italic;
 }

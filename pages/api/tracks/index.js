@@ -25,15 +25,15 @@ async function handleGet(req, res) {
 
 async function handlePost(req, res) {
   try {
-    const { album_id, track_number, title, duration } = req.body;
+    const { album_id, track_number, title, duration, lyrics } = req.body;
     
     if (!album_id || !track_number || !title) {
       return res.status(400).json({ error: 'Album ID, track number, and title are required' });
     }
     
     const result = await db.query(
-      'INSERT INTO tracks (album_id, track_number, title, duration) VALUES ($1, $2, $3, $4) RETURNING *',
-      [album_id, track_number, title, duration || null]
+      'INSERT INTO tracks (album_id, track_number, title, duration, lyrics) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [album_id, track_number, title, duration || null, lyrics || null]
     );
     
     res.status(201).json(result.rows[0]);

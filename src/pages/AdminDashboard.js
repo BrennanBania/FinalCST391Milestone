@@ -12,7 +12,7 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
   const [selectedAlbumForTracks, setSelectedAlbumForTracks] = useState(null);
   const [tracks, setTracks] = useState([]);
   const [editingTrack, setEditingTrack] = useState(null);
-  const [newTrack, setNewTrack] = useState({ track_number: '', title: '', duration: '' });
+  const [newTrack, setNewTrack] = useState({ track_number: '', title: '', duration: '', lyrics: '' });
   const [editFormData, setEditFormData] = useState({
     title: '',
     artist_name: '',
@@ -33,7 +33,8 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
   const [editTrackData, setEditTrackData] = useState({
     track_number: '',
     title: '',
-    duration: ''
+    duration: '',
+    lyrics: ''
   });
 
   useEffect(() => {
@@ -264,13 +265,14 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
           album_id: selectedAlbumForTracks,
           track_number: parseInt(newTrack.track_number),
           title: newTrack.title,
-          duration: newTrack.duration || null
+          duration: newTrack.duration || null,
+          lyrics: newTrack.lyrics || null
         })
       });
 
       if (response.ok) {
         alert('Track added successfully!');
-        setNewTrack({ track_number: '', title: '', duration: '' });
+        setNewTrack({ track_number: '', title: '', duration: '', lyrics: '' });
         fetchTracks(selectedAlbumForTracks);
       } else {
         alert(response.error || 'Error adding track');
@@ -286,7 +288,8 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
     setEditTrackData({
       track_number: track.track_number,
       title: track.title,
-      duration: track.duration || ''
+      duration: track.duration || '',
+      lyrics: track.lyrics || ''
     });
   };
 
@@ -302,14 +305,15 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
         body: JSON.stringify({
           track_number: parseInt(editTrackData.track_number),
           title: editTrackData.title,
-          duration: editTrackData.duration || null
+          duration: editTrackData.duration || null,
+          lyrics: editTrackData.lyrics || null
         })
       });
 
       if (response.ok) {
         alert('Track updated successfully!');
         setEditingTrack(null);
-        setEditTrackData({ track_number: '', title: '', duration: '' });
+        setEditTrackData({ track_number: '', title: '', duration: '', lyrics: '' });
         fetchTracks(selectedAlbumForTracks);
       } else {
         alert(response.error || 'Error updating track');
@@ -850,6 +854,13 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
                   placeholder="Duration (e.g., 3:45)"
                   className="form-input"
                 />
+                <textarea
+                  value={newTrack.lyrics}
+                  onChange={(e) => setNewTrack({...newTrack, lyrics: e.target.value})}
+                  placeholder="Lyrics (optional)"
+                  className="form-input"
+                  rows="8"
+                />
                 <button onClick={handleAddTrack} className="approve-button">
                   Add Track
                 </button>
@@ -884,13 +895,20 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
                             placeholder="Duration (e.g., 3:45)"
                             className="form-input"
                           />
+                          <textarea
+                            value={editTrackData.lyrics}
+                            onChange={(e) => setEditTrackData({...editTrackData, lyrics: e.target.value})}
+                            placeholder="Lyrics (optional)"
+                            className="form-input"
+                            rows="8"
+                          />
                           <div className="request-actions">
                             <button onClick={() => handleSaveTrack(track.track_id)} className="approve-button">
                               Save
                             </button>
                             <button onClick={() => {
                               setEditingTrack(null);
-                              setEditTrackData({ track_number: '', title: '', duration: '' });
+                              setEditTrackData({ track_number: '', title: '', duration: '', lyrics: '' });
                             }} className="deny-button">
                               Cancel
                             </button>

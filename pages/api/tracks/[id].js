@@ -18,11 +18,11 @@ async function handleGet(req, res, id) {
 
 async function handlePut(req, res, id) {
   try {
-    const { track_number, title, duration } = req.body;
+    const { track_number, title, duration, lyrics } = req.body;
     
     const result = await db.query(
-      'UPDATE tracks SET track_number = $1, title = $2, duration = $3 WHERE track_id = $4 RETURNING *',
-      [track_number, title, duration || null, id]
+      'UPDATE tracks SET track_number = $1, title = $2, duration = $3, lyrics = $4 WHERE track_id = $5 RETURNING *',
+      [track_number, title, duration || null, lyrics || null, id]
     );
     
     if (result.rows.length === 0) {

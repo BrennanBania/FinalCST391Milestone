@@ -5,7 +5,12 @@ async function handlePut(req, res, id) {
   try {
     const userId = req.user.userId;
     const userRole = req.user.role;
-    const { rating, reviewText } = req.body;
+    const { rating, review_text, reviewText } = req.body;
+    
+    // Accept either review_text or reviewText
+    const text = review_text !== undefined ? review_text : reviewText;
+
+    console.log('Updating review:', { id, rating, text, body: req.body });
 
     // Check if review exists
     const reviewCheck = await db.query('SELECT * FROM reviews WHERE review_id = $1', [id]);
@@ -24,10 +29,20 @@ async function handlePut(req, res, id) {
     }
 
     // Update review
-    await db.query(
-      'UPDATE reviews SET rating = $1, review_text = $2, updated_at = CURRENT_TIMESTAMP WHERE review_id = $3',
-      [rating, reviewText || '', id]
+    const result = await db.query(
+      'UPDATE reviews SET rating = $1, review_text = $2, updated_at = CURRENT_TIMESTAMP WHERE review_id = $3 RETURNING *',
+      [rating, text || '', id]
     );
+    
+    console.log('Review updated in DB:', result.rows[0]);
+
+    // Refresh top albums cache after rating update
+    try {
+      const { refreshTopAlbumsCache } = require('../../../lib/topAlbumsCache');
+      refreshTopAlbumsCache().catch(err => console.error('Cache refresh error:', err));
+    } catch (err) {
+      console.error('Failed to refresh top albums cache:', err);
+    }
 
     res.json({ message: 'Review updated successfully' });
   } catch (error) {
@@ -54,6 +69,14 @@ async function handleDelete(req, res, id) {
     }
 
     await db.query('DELETE FROM reviews WHERE review_id = $1', [id]);
+
+    // Refresh top albums cache after deleting review
+    try {
+      const { refreshTopAlbumsCache } = require('../../../lib/topAlbumsCache');
+      refreshTopAlbumsCache().catch(err => console.error('Cache refresh error:', err));
+    } catch (err) {
+      console.error('Failed to refresh top albums cache:', err);
+    }
 
     res.json({ message: 'Review deleted successfully' });
   } catch (error) {

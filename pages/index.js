@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import HomePage from '../src/pages/HomePage';
 
-export default function Home({ topAlbums, isLoggedIn, appState }) {
+export default function Home({ topAlbums, isLoggedIn, appState, username }) {
   useEffect(() => {
     // Handle GitHub OAuth callback
     const params = new URLSearchParams(window.location.search);
@@ -21,13 +21,23 @@ export default function Home({ topAlbums, isLoggedIn, appState }) {
     }
   }, []);
 
+  useEffect(() => {
+    // Fetch data when appState is available
+    if (appState?.fetchTopAlbums && appState?.fetchAlbums) {
+      appState.fetchTopAlbums(true);
+      appState.fetchAlbums(true);
+    }
+  }, [appState?.fetchTopAlbums, appState?.fetchAlbums])
+
   return (
     <HomePage
       topAlbums={appState?.topAlbums || []}
+      albums={appState?.albums || []}
       onViewAlbum={(album) => {
         window.location.href = `/albums/${album.album_id}`;
       }}
       isLoggedIn={isLoggedIn}
+      username={username}
     />
   );
 }

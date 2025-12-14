@@ -13,10 +13,11 @@ const AlbumCard = React.memo(({ album, onView, showViewButton = true }) => {
       <p>{album.artist_name}</p>
       <p className="genre">{album.genre}</p>
       <p className="year">{album.release_year}</p>
-      {album.review_count > 0 && (
-        <p className="rating">Rating: {parseFloat(album.avg_rating).toFixed(2)}</p>
+      {album.avg_rating > 0 ? (
+        <p className="rating">Rating: {parseFloat(album.avg_rating).toFixed(2)} ({album.review_count || 0} {album.review_count === 1 ? 'review' : 'reviews'})</p>
+      ) : (
+        <p className="rating">No ratings yet</p>
       )}
-      {album.review_count === 0 && <p className="rating">No ratings yet</p>}
       {showViewButton && (
         <button onClick={() => onView(album)} className="view-btn">
           View

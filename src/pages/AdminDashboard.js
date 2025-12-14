@@ -61,13 +61,19 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
       hasFetchedInitialDataRef.current = true;
       appState.fetchAlbumRequests();
       appState.fetchAllReviews();
+      appState.fetchAlbums(true);
     }
   }, []);
 
   useEffect(() => {
-    // Only fetch users when needed
+    // Fetch data when switching views
     if (view === 'users' && users.length === 0) {
       fetchUsers();
+    } else if (view === 'albums') {
+      appState.fetchAlbums(true);
+    } else if (view === 'overview') {
+      appState.fetchAlbums(true);
+      appState.fetchAlbumRequests();
     }
   }, [view]);
 
@@ -134,7 +140,8 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
       });
       if (handleApiResponse(response, 'Album request approved successfully!', 'Error approving request')) {
         appState.fetchAlbumRequests();
-        appState.fetchAlbums();
+        appState.fetchAlbums(true);
+        appState.fetchTopAlbums(true);
       }
     } catch (error) {
       console.error('Error approving request:', error);
@@ -233,7 +240,8 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
       });
       if (handleApiResponse(response, 'Album updated successfully!', 'Error updating album')) {
         setEditingAlbum(null);
-        appState.fetchAlbums();
+        appState.fetchAlbums(true);
+        appState.fetchTopAlbums(true);
       }
     } catch (error) {
       console.error('Error updating album:', error);
@@ -247,7 +255,8 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
     try {
       const response = await fetchAPI(`/api/albums/${albumId}`, { method: 'DELETE' });
       if (handleApiResponse(response, 'Album deleted successfully!', 'Error deleting album')) {
-        appState.fetchAlbums();
+        appState.fetchAlbums(true);
+        appState.fetchTopAlbums(true);
       }
     } catch (error) {
       console.error('Error deleting album:', error);
@@ -262,6 +271,8 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
         body: JSON.stringify({ flagged: false })
       });
       appState.fetchAllReviews();
+      appState.fetchTopAlbums(true);
+      appState.fetchAlbums(true);
     } catch (error) {
       console.error('Error unflagging review:', error);
       alert('Error unflagging review');
@@ -275,6 +286,8 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
         body: JSON.stringify({ flagged: true })
       });
       appState.fetchAllReviews();
+      appState.fetchTopAlbums(true);
+      appState.fetchAlbums(true);
     } catch (error) {
       console.error('Error flagging review:', error);
       alert('Error flagging review');
@@ -442,13 +455,7 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
             <h3>Manage Users</h3>
             <p><span className="dashboard-number">{users.length || 0}</span> registered user{(users.length || 0) !== 1 ? 's' : ''}</p>
           </div>
-          <div className="dashboard-card" onClick={() => { 
-            if (onNavigate) {
-              onNavigate('edit-album');
-            } else {
-              router.push('/edit-album');
-            }
-          }}>
+          <div className="dashboard-card" onClick={() => router.push('/edit-album')}>
             <h3>Add Album</h3>
             <p><span className="dashboard-number">+</span> Add new album to collection</p>
           </div>

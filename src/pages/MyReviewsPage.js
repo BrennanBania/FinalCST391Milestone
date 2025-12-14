@@ -20,22 +20,45 @@ function MyReviewsPage({ reviews, appState }) {
   }, [reviews]);
 
   const handleEditStart = (review) => {
-    setEditingId(review.id);
-    setEditingData({ rating: review.rating, reviewText: review.review_text || '' });
+    console.log('Starting edit for review:', review);
+    console.log('Review text:', review.review_text);
+    const initialText = review.review_text || '';
+    const initialRating = review.rating || 5;
+    console.log('Setting editingData:', { rating: initialRating, reviewText: initialText });
+    setEditingId(review.review_id);
+    setEditingData({ 
+      rating: initialRating, 
+      reviewText: initialText
+    });
   };
 
   const handleEditSave = async (reviewId) => {
+    console.log('Saving review with data:', editingData);
+    if (!editingData.rating || editingData.rating < 1 || editingData.rating > 5) {
+      alert('Please select a valid rating (1-5)');
+      return;
+    }
+    
     try {
-      await fetchAPI(`/api/reviews/${reviewId}`, {
+      const response = await fetchAPI(`/api/reviews/${reviewId}`, {
         method: 'PUT',
         body: JSON.stringify({
           rating: editingData.rating,
-          review_text: editingData.reviewText
+          review_text: editingData.reviewText || ''
         })
       });
-      setEditingId(null);
-      appState.fetchMyReviews();
-      appState.fetchTopAlbums();
+      
+      if (response.ok) {
+        setEditingId(null);
+        setEditingData({ rating: 0, reviewText: '' });
+        // Refresh data to show updated review
+        await appState.fetchMyReviews();
+        await appState.fetchTopAlbums(true);
+        await appState.fetchAlbums(true);
+        alert('Review updated successfully!');
+      } else {
+        alert(response.error || 'Error updating review');
+      }
     } catch (error) {
       console.error('Error updating review:', error);
       alert('Error updating review');
@@ -50,7 +73,8 @@ function MyReviewsPage({ reviews, appState }) {
         method: 'DELETE'
       });
       appState.fetchMyReviews();
-      appState.fetchTopAlbums();
+      appState.fetchTopAlbums(true);
+      appState.fetchAlbums(true);
     } catch (error) {
       console.error('Error deleting review:', error);
       alert('Error deleting review');
@@ -64,6 +88,8 @@ function MyReviewsPage({ reviews, appState }) {
         body: JSON.stringify({ flagged: true })
       });
       appState.fetchMyReviews();
+      appState.fetchTopAlbums(true);
+      appState.fetchAlbums(true);
     } catch (error) {
       console.error('Error flagging review:', error);
       alert('Error flagging review');
@@ -77,6 +103,8 @@ function MyReviewsPage({ reviews, appState }) {
         body: JSON.stringify({ flagged: false })
       });
       appState.fetchMyReviews();
+      appState.fetchTopAlbums(true);
+      appState.fetchAlbums(true);
     } catch (error) {
       console.error('Error unflagging review:', error);
       alert('Error unflagging review');
@@ -90,21 +118,27 @@ function MyReviewsPage({ reviews, appState }) {
         {myReviews && myReviews.length > 0 ? (
           myReviews.map(review => (
             <ReviewCard
-              key={review.id}
+              key={review.review_id}
               review={review}
-              isEditing={editingId === review.id}
+              isEditing={editingId === review.review_id}
               editingData={editingData}
               onEdit={() => handleEditStart(review)}
-              onSave={() => handleEditSave(review.id)}
+              onSave={() => handleEditSave(review.review_id)}
               onCancel={() => setEditingId(null)}
-              onDelete={() => handleDelete(review.id)}
+              onDelete={() => handleDelete(review.review_id)}
               onFlag={handleFlagReview}
               onUnflag={handleUnflagReview}
               isMyReview={true}
-              isFlagged={review.flagged}
+              isFlagged={review.is_flagged}
               canUnflag={false}
-              onRatingChange={(rating) => setEditingData({ ...editingData, rating })}
-              onTextChange={(text) => setEditingData({ ...editingData, reviewText: text })}
+              onRatingChange={(rating) => {
+                console.log('Rating changed to:', rating);
+                setEditingData({ ...editingData, rating });
+              }}
+              onTextChange={(text) => {
+                console.log('Text changed to:', text);
+                setEditingData({ ...editingData, reviewText: text });
+              }}
             />
           ))
         ) : (

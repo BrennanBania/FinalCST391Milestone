@@ -13,6 +13,8 @@ const ReviewCard = React.memo(({
   isMyReview = false,
   isFlagged = false,
   canUnflag = false,
+  onRatingChange,
+  onTextChange,
 }) => {
   if (isEditing) {
     return (
@@ -25,7 +27,7 @@ const ReviewCard = React.memo(({
               <span
                 key={star}
                 className={`star ${star <= editingData.rating ? 'filled' : ''}`}
-                onClick={() => onEdit({ ...editingData, rating: star })}
+                onClick={() => onRatingChange && onRatingChange(star)}
                 style={{ cursor: 'pointer' }}
               >
                 ★
@@ -34,9 +36,10 @@ const ReviewCard = React.memo(({
           </div>
           <label>Review:</label>
           <textarea
-            value={editingData.reviewText}
-            onChange={(e) => onEdit({ ...editingData, reviewText: e.target.value })}
+            value={editingData.reviewText || ''}
+            onChange={(e) => onTextChange && onTextChange(e.target.value)}
             rows="4"
+            placeholder="Write your review here..."
           />
           <div className="edit-buttons">
             <button onClick={() => onSave(review.review_id)} className="save-btn">

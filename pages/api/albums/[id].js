@@ -16,9 +16,9 @@ async function handleGet(req, res, id) {
       return res.status(404).json({ error: 'Album not found' });
     }
 
-    // Get tracks for the album
+    // Get tracks for the album (exclude lyrics for better performance)
     const tracksResult = await db.query(
-      'SELECT * FROM tracks WHERE album_id = $1 ORDER BY track_number',
+      'SELECT track_id, album_id, title, duration, track_number, video_url, created_at FROM tracks WHERE album_id = $1 ORDER BY track_number',
       [id]
     );
 
@@ -44,6 +44,8 @@ async function handlePut(req, res, id) {
   try {
     const { title, artist_name, release_year, genre, description, image_url, video_url } = req.body;
 
+    console.log('Updating album:', id, 'with data:', { title, artist_name, release_year, genre, description, image_url, video_url });
+
     // Find or create artist if artist_name is provided
     let artistId;
     if (artist_name) {
@@ -63,23 +65,58 @@ async function handlePut(req, res, id) {
       }
     }
 
-    const result = await db.query(
-      `UPDATE albums 
-       SET title = COALESCE($1, title),
-           artist_id = COALESCE($2, artist_id),
-           release_year = COALESCE($3, release_year),
-           genre = COALESCE($4, genre),
-           description = COALESCE($5, description),
-           image_url = COALESCE($6, image_url),
-           video_url = COALESCE($7, video_url)
-       WHERE album_id = $8
-       RETURNING *`,
-      [title, artistId, release_year, genre, description, image_url, video_url, id]
-    );
+    console.log('Artist ID:', artistId);
+
+    // Build update query dynamically to only update provided fields
+    const updates = [];
+    const values = [];
+    let paramCount = 1;
+
+    if (title !== undefined && title !== '') {
+      updates.push(`title = $${paramCount++}`);
+      values.push(title);
+    }
+    if (artistId !== undefined) {
+      updates.push(`artist_id = $${paramCount++}`);
+      values.push(artistId);
+    }
+    if (release_year !== undefined && release_year !== '') {
+      updates.push(`release_year = $${paramCount++}`);
+      values.push(parseInt(release_year));
+    }
+    if (genre !== undefined && genre !== '') {
+      updates.push(`genre = $${paramCount++}`);
+      values.push(genre);
+    }
+    if (description !== undefined) {
+      updates.push(`description = $${paramCount++}`);
+      values.push(description);
+    }
+    if (image_url !== undefined) {
+      updates.push(`image_url = $${paramCount++}`);
+      values.push(image_url);
+    }
+    if (video_url !== undefined) {
+      updates.push(`video_url = $${paramCount++}`);
+      values.push(video_url);
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+
+    values.push(id);
+    const query = `UPDATE albums SET ${updates.join(', ')} WHERE album_id = $${paramCount} RETURNING *`;
+    
+    console.log('Executing query:', query, 'with values:', values);
+
+    const result = await db.query(query, values);
 
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Album not found' });
     }
+
+    console.log('Update successful:', result.rows[0]);
 
     res.json({
       message: 'Album updated successfully',
@@ -87,7 +124,7 @@ async function handlePut(req, res, id) {
     });
   } catch (error) {
     console.error('Error updating album:', error);
-    res.status(500).json({ error: 'Server error' });
+    res.status(500).json({ error: 'Server error', details: error.message });
   }
 }
 

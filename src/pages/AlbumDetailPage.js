@@ -13,11 +13,30 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
   const [reviewsCollapsed, setReviewsCollapsed] = useState(false);
   const [selectedTrack, setSelectedTrack] = useState(null);
 
-  const handleTrackClick = (track) => {
+  const handleTrackClick = async (track) => {
     console.log('Selected track:', track);
-    console.log('Track video_url:', track.video_url);
-    console.log('Embed URL:', track.video_url ? getYouTubeEmbedUrl(track.video_url) : 'No video_url');
-    setSelectedTrack(track.track_id === selectedTrack?.track_id ? null : track);
+    
+    // If clicking the same track, collapse it
+    if (track.track_id === selectedTrack?.track_id) {
+      setSelectedTrack(null);
+      return;
+    }
+    
+    // Fetch full track details including lyrics
+    try {
+      const response = await fetchAPI(`/api/tracks/${track.track_id}`);
+      if (response.ok && response.data) {
+        console.log('Full track data:', response.data);
+        setSelectedTrack(response.data);
+      } else {
+        // Fallback to track without lyrics
+        setSelectedTrack(track);
+      }
+    } catch (error) {
+      console.error('Error fetching track details:', error);
+      // Fallback to track without lyrics
+      setSelectedTrack(track);
+    }
   };
 
   const getYouTubeEmbedUrl = (url) => {
@@ -93,7 +112,8 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
       if (response.ok) {
         setNewReview({ rating: 0, reviewText: '' });
         fetchReviews();
-        appState.fetchTopAlbums();
+        appState.fetchTopAlbums(true);
+        appState.fetchAlbums(true);
         alert('Review submitted successfully!');
       } else {
         alert(response.error || 'Error submitting review');
@@ -115,7 +135,8 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
       });
       setIsEditing(false);
       fetchReviews();
-      appState.fetchTopAlbums();
+      appState.fetchTopAlbums(true);
+      appState.fetchAlbums(true);
     } catch (error) {
       console.error('Error updating review:', error);
       alert('Error updating review');
@@ -131,7 +152,8 @@ function AlbumDetailPage({ album, tracks = [], isLoggedIn, username, appState, o
       });
       setMyReview(null);
       fetchReviews();
-      appState.fetchTopAlbums();
+      appState.fetchTopAlbums(true);
+      appState.fetchAlbums(true);
     } catch (error) {
       console.error('Error deleting review:', error);
       alert('Error deleting review');

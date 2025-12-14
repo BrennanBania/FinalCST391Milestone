@@ -93,22 +93,6 @@ function HomePage({ topAlbums, onViewAlbum, isLoggedIn, username, albums = [] })
         </section>
       )}
 
-      {isLoggedIn && recommended.length > 0 && (
-        <section className="home-section">
-          <h2>Recommended for You</h2>
-          <div className="albums-grid">
-            {recommended.map(album => (
-              <AlbumCard
-                key={album.album_id}
-                album={album}
-                onView={() => onViewAlbum(album)}
-                showViewButton={true}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
       {isLoggedIn && (
         <section className="home-section">
           <h2>Recent Reviews</h2>

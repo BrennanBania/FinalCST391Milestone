@@ -54,6 +54,14 @@ async function handlePost(req, res) {
         [rating, reviewText, userId, albumId]
       );
 
+      // Refresh top albums cache after rating update
+      try {
+        const { refreshTopAlbumsCache } = require('../../../lib/topAlbumsCache');
+        refreshTopAlbumsCache().catch(err => console.error('Cache refresh error:', err));
+      } catch (err) {
+        console.error('Failed to refresh top albums cache:', err);
+      }
+
       res.json({
         reviewId: result.rows[0].review_id,
         message: 'Review updated successfully',
@@ -64,6 +72,14 @@ async function handlePost(req, res) {
         'INSERT INTO reviews (user_id, album_id, rating, review_text) VALUES ($1, $2, $3, $4) RETURNING review_id',
         [userId, albumId, rating, reviewText]
       );
+
+      // Refresh top albums cache after new review
+      try {
+        const { refreshTopAlbumsCache } = require('../../../lib/topAlbumsCache');
+        refreshTopAlbumsCache().catch(err => console.error('Cache refresh error:', err));
+      } catch (err) {
+        console.error('Failed to refresh top albums cache:', err);
+      }
 
       const reviewId = result.rows[0].review_id;
       res.status(201).json({

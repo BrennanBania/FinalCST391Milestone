@@ -37,18 +37,8 @@ function EditAlbumPage({ appState }) {
         if (appState && appState.fetchAlbums) {
           appState.fetchAlbums();
         }
-        setTitle('');
-        setArtistName('');
-        setGenre('');
-        setReleaseYear('');
-        setDescription('');
-        setImageUrl('');
-        setVideoUrl('');
-        if (onNavigate) {
-          onNavigate('albums');
-        } else {
-          router.push('/albums');
-        }
+        alert('Album added successfully!');
+        router.push('/admin');
       } else {
         setError(response.error || 'Error creating album');
       }

@@ -63,6 +63,8 @@ function AllReviewsPage({ reviews, isAdmin, username, appState }) {
         body: JSON.stringify({ flagged: true })
       });
       appState.fetchAllReviews();
+      appState.fetchTopAlbums(true);
+      appState.fetchAlbums(true);
     } catch (error) {
       console.error('Error flagging review:', error);
       alert('Error flagging review');
@@ -76,6 +78,8 @@ function AllReviewsPage({ reviews, isAdmin, username, appState }) {
         body: JSON.stringify({ flagged: false })
       });
       appState.fetchAllReviews();
+      appState.fetchTopAlbums(true);
+      appState.fetchAlbums(true);
     } catch (error) {
       console.error('Error unflagging review:', error);
       alert('Error unflagging review');

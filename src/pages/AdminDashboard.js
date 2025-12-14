@@ -53,6 +53,8 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
     lyrics: '',
     video_url: ''
   });
+  const [editingReview, setEditingReview] = useState(null);
+  const [editReviewData, setEditReviewData] = useState({ rating: 0, review_text: '' });
   const hasFetchedInitialDataRef = useRef(false);
 
   useEffect(() => {
@@ -291,6 +293,67 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
     } catch (error) {
       console.error('Error flagging review:', error);
       alert('Error flagging review');
+    }
+  };
+
+  const handleEditReviewStart = (review) => {
+    setEditingReview(review.review_id);
+    setEditReviewData({
+      rating: review.rating || 5,
+      review_text: review.review_text || ''
+    });
+  };
+
+  const handleEditReviewSave = async (reviewId) => {
+    if (!editReviewData.rating || editReviewData.rating < 1 || editReviewData.rating > 5) {
+      alert('Please select a valid rating (1-5)');
+      return;
+    }
+
+    try {
+      const response = await fetchAPI(`/api/reviews/${reviewId}`, {
+        method: 'PUT',
+        body: JSON.stringify({
+          rating: editReviewData.rating,
+          review_text: editReviewData.review_text || ''
+        })
+      });
+
+      if (response.ok) {
+        setEditingReview(null);
+        setEditReviewData({ rating: 0, review_text: '' });
+        appState.fetchAllReviews();
+        appState.fetchTopAlbums(true);
+        appState.fetchAlbums(true);
+        alert('Review updated successfully!');
+      } else {
+        alert(response.error || 'Error updating review');
+      }
+    } catch (error) {
+      console.error('Error updating review:', error);
+      alert('Error updating review');
+    }
+  };
+
+  const handleDeleteReview = async (reviewId) => {
+    if (!confirm('Are you sure you want to delete this review? This action cannot be undone.')) return;
+
+    try {
+      const response = await fetchAPI(`/api/reviews/${reviewId}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        appState.fetchAllReviews();
+        appState.fetchTopAlbums(true);
+        appState.fetchAlbums(true);
+        alert('Review deleted successfully!');
+      } else {
+        alert(response.error || 'Error deleting review');
+      }
+    } catch (error) {
+      console.error('Error deleting review:', error);
+      alert('Error deleting review');
     }
   };
 
@@ -653,27 +716,69 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
             {filteredFlagged && filteredFlagged.length > 0 ? (
               filteredFlagged.map(review => (
                 <div key={review.review_id} className="review-card-large flagged">
-                  <div className="review-left">
-                    <div className="review-rating">
-                      {[...Array(5)].map((_, i) => (
-                        <span key={i} className={`star ${i < review.rating ? 'filled' : ''}`}>
-                          ★
-                        </span>
-                      ))}
+                  {editingReview === review.review_id ? (
+                    <div className="edit-review-form">
+                      <h3>Editing Review: {review.album_title}</h3>
+                      <p className="artist-name">{review.artist_name} • By: {review.username}</p>
+                      <div className="form-group">
+                        <label>Rating:</label>
+                        <select
+                          value={editReviewData.rating}
+                          onChange={(e) => setEditReviewData({...editReviewData, rating: parseInt(e.target.value)})}
+                          className="form-input"
+                        >
+                          <option value={1}>1 Star</option>
+                          <option value={2}>2 Stars</option>
+                          <option value={3}>3 Stars</option>
+                          <option value={4}>4 Stars</option>
+                          <option value={5}>5 Stars</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Review Text:</label>
+                        <textarea
+                          value={editReviewData.review_text}
+                          onChange={(e) => setEditReviewData({...editReviewData, review_text: e.target.value})}
+                          className="form-input"
+                          rows="4"
+                        />
+                      </div>
+                      <div className="form-actions">
+                        <button onClick={() => handleEditReviewSave(review.review_id)} className="save-btn">Save</button>
+                        <button onClick={() => setEditingReview(null)} className="cancel-btn">Cancel</button>
+                      </div>
                     </div>
-                    <h3>{review.album_title}</h3>
-                    <p className="artist-name">{review.artist_name}</p>
-                    <p className="review-author">By: {review.username}</p>
-                    <p className="flagged-badge">⚠️ FLAGGED</p>
-                  </div>
-                  <div className="review-right">
-                    <p className="review-text">{review.review_text}</p>
-                    <div className="review-actions">
-                      <button onClick={() => handleUnflagReview(review.review_id)} className="unflag-btn">
-                        Unflag
-                      </button>
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="review-left">
+                        <div className="review-rating">
+                          {[...Array(5)].map((_, i) => (
+                            <span key={i} className={`star ${i < review.rating ? 'filled' : ''}`}>
+                              ★
+                            </span>
+                          ))}
+                        </div>
+                        <h3>{review.album_title}</h3>
+                        <p className="artist-name">{review.artist_name}</p>
+                        <p className="review-author">By: {review.username}</p>
+                        <p className="flagged-badge">⚠️ FLAGGED</p>
+                      </div>
+                      <div className="review-right">
+                        <p className="review-text">{review.review_text}</p>
+                        <div className="review-actions">
+                          <button onClick={() => handleUnflagReview(review.review_id)} className="unflag-btn">
+                            Unflag
+                          </button>
+                          <button onClick={() => handleEditReviewStart(review)} className="edit-btn">
+                            Edit
+                          </button>
+                          <button onClick={() => handleDeleteReview(review.review_id)} className="delete-btn">
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))
             ) : (
@@ -689,26 +794,68 @@ function AdminDashboard({ albumRequests, appState, onNavigate }) {
             {filteredRegular && filteredRegular.length > 0 ? (
               filteredRegular.map(review => (
                 <div key={review.review_id} className="review-card-large">
-                  <div className="review-left">
-                    <div className="review-rating">
-                      {[...Array(5)].map((_, i) => (
-                        <span key={i} className={`star ${i < review.rating ? 'filled' : ''}`}>
-                          ★
-                        </span>
-                      ))}
+                  {editingReview === review.review_id ? (
+                    <div className="edit-review-form">
+                      <h3>Editing Review: {review.album_title}</h3>
+                      <p className="artist-name">{review.artist_name} • By: {review.username}</p>
+                      <div className="form-group">
+                        <label>Rating:</label>
+                        <select
+                          value={editReviewData.rating}
+                          onChange={(e) => setEditReviewData({...editReviewData, rating: parseInt(e.target.value)})}
+                          className="form-input"
+                        >
+                          <option value={1}>1 Star</option>
+                          <option value={2}>2 Stars</option>
+                          <option value={3}>3 Stars</option>
+                          <option value={4}>4 Stars</option>
+                          <option value={5}>5 Stars</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Review Text:</label>
+                        <textarea
+                          value={editReviewData.review_text}
+                          onChange={(e) => setEditReviewData({...editReviewData, review_text: e.target.value})}
+                          className="form-input"
+                          rows="4"
+                        />
+                      </div>
+                      <div className="form-actions">
+                        <button onClick={() => handleEditReviewSave(review.review_id)} className="save-btn">Save</button>
+                        <button onClick={() => setEditingReview(null)} className="cancel-btn">Cancel</button>
+                      </div>
                     </div>
-                    <h3>{review.album_title}</h3>
-                    <p className="artist-name">{review.artist_name}</p>
-                    <p className="review-author">By: {review.username}</p>
-                  </div>
-                  <div className="review-right">
-                    <p className="review-text">{review.review_text}</p>
-                    <div className="review-actions">
-                      <button onClick={() => handleFlagReview(review.review_id)} className="flag-btn">
-                        Flag
-                      </button>
-                    </div>
-                  </div>
+                  ) : (
+                    <>
+                      <div className="review-left">
+                        <div className="review-rating">
+                          {[...Array(5)].map((_, i) => (
+                            <span key={i} className={`star ${i < review.rating ? 'filled' : ''}`}>
+                              ★
+                            </span>
+                          ))}
+                        </div>
+                        <h3>{review.album_title}</h3>
+                        <p className="artist-name">{review.artist_name}</p>
+                        <p className="review-author">By: {review.username}</p>
+                      </div>
+                      <div className="review-right">
+                        <p className="review-text">{review.review_text}</p>
+                        <div className="review-actions">
+                          <button onClick={() => handleFlagReview(review.review_id)} className="flag-btn">
+                            Flag
+                          </button>
+                          <button onClick={() => handleEditReviewStart(review)} className="edit-btn">
+                            Edit
+                          </button>
+                          <button onClick={() => handleDeleteReview(review.review_id)} className="delete-btn">
+                            Delete
+                          </button>
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
               ))
             ) : (
